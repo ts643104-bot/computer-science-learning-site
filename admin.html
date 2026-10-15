@@ -1,0 +1,982 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#070C17" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>لوحة تحكم الأدمن | شبكة وعلوم</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="./assets/index-BUb9AD-X.css" />
+  <style>
+    /* ==== تنسيقات خاصة بلوحة الأدمن (بدون المساس بتصميم الموقع) ==== */
+    .ad-shell {
+      position: relative;
+      min-height: 100dvh;
+      padding-block: 2rem 4rem;
+      overflow-x: hidden;
+    }
+
+    .ad-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.75rem;
+    }
+
+    .ad-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .ad-logo {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      font-size: 1.3rem;
+      background: linear-gradient(135deg, #22c55e, #38bdf8);
+      color: #04160b;
+      box-shadow: 0 8px 24px rgba(34, 197, 94, 0.35);
+    }
+
+    .ad-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    .ad-sub {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .ad-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.9rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .ad-stat {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1rem 1.15rem;
+    }
+
+    .ad-stat .n {
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: #fff;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .ad-stat .l {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 0.15rem;
+    }
+
+    .ad-stat.g .n {
+      color: #86efac;
+    }
+
+    .ad-stat.s .n {
+      color: #7dd3fc;
+    }
+
+    .ad-stat.a .n {
+      color: #fcd34d;
+    }
+
+    .ad-tabs {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 0.75rem;
+    }
+
+    .ad-tab {
+      padding: 0.5rem 1.1rem;
+      border-radius: 999px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      background: transparent;
+      transition: all 0.18s ease;
+    }
+
+    .ad-tab:hover {
+      color: var(--text);
+      background: #ffffff0a;
+    }
+
+    .ad-tab.on {
+      background: #22c55e1f;
+      border-color: #22c55e4d;
+      color: #86efac;
+    }
+
+    .ad-panel {
+      display: none;
+    }
+
+    .ad-panel.on {
+      display: block;
+      animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .ad-grid2 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+
+    @media (min-width: 900px) {
+      .ad-grid2 {
+        grid-template-columns: 1.15fr 0.85fr;
+      }
+    }
+
+    .ad-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1.35rem;
+    }
+
+    .ad-card h3 {
+      font-size: 1.02rem;
+      font-weight: 700;
+      margin: 0 0 0.9rem;
+      color: #fff;
+    }
+
+    .ad-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      margin-bottom: 0.9rem;
+    }
+
+    .ad-field label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .ad-input,
+    .ad-textarea {
+      width: 100%;
+      background: #070c17;
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      padding: 0.7rem 0.9rem;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.92rem;
+      outline: none;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .ad-textarea {
+      min-height: 110px;
+      resize: vertical;
+      font-family: 'JetBrains Mono', monospace;
+      direction: ltr;
+      text-align: left;
+    }
+
+    .ad-input:focus,
+    .ad-textarea:focus {
+      border-color: #22c55e99;
+      box-shadow: 0 0 0 3px #22c55e26;
+    }
+
+    .ad-row {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .ad-row>* {
+      flex: 1 1 180px;
+    }
+
+    .ad-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.65rem 1.25rem;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      white-space: nowrap;
+      transition: all 0.18s ease;
+    }
+
+    .ad-btn-p {
+      background: linear-gradient(135deg, #22c55e, #4ade80);
+      color: #04160b;
+      box-shadow: 0 8px 24px #22c55e47;
+    }
+
+    .ad-btn-p:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px #22c55e6b;
+    }
+
+    .ad-btn-g {
+      border-color: var(--line-strong);
+      color: var(--text);
+      background: #ffffff05;
+    }
+
+    .ad-btn-g:hover {
+      background: #ffffff12;
+    }
+
+    .ad-btn-d {
+      border-color: #ef444480;
+      color: #fca5a5;
+      background: #ef44441a;
+    }
+
+    .ad-btn-d:hover {
+      background: #ef44442e;
+    }
+
+    .ad-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .ad-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+
+    .ad-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      min-width: 560px;
+    }
+
+    .ad-table th {
+      background: #22c55e1a;
+      color: #86efac;
+      font-weight: 600;
+      text-align: right;
+      padding: 0.7rem 0.9rem;
+      white-space: nowrap;
+    }
+
+    .ad-table td {
+      padding: 0.65rem 0.9rem;
+      border-top: 1px solid var(--line);
+      color: #cbd5e1;
+      vertical-align: middle;
+    }
+
+    .ad-table tbody tr:hover td {
+      background: #ffffff06;
+    }
+
+    .ad-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.18rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #94a3b814;
+      color: var(--text-muted);
+    }
+
+    .ad-pill.g {
+      background: #22c55e21;
+      border-color: #22c55e4d;
+      color: #86efac;
+    }
+
+    .ad-pill.r {
+      background: #ef44441f;
+      border-color: #ef44444d;
+      color: #fca5a5;
+    }
+
+    .ad-pill.a {
+      background: #fcd34d21;
+      border-color: #fcd34d4d;
+      color: #fcd34d;
+    }
+
+    .ad-empty {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 2rem 1rem;
+      font-size: 0.9rem;
+    }
+
+    .ad-msg {
+      border-radius: 12px;
+      padding: 0.65rem 1rem;
+      font-size: 0.88rem;
+      margin-bottom: 1rem;
+      display: none;
+    }
+
+    .ad-msg.on {
+      display: block;
+    }
+
+    .ad-msg.ok {
+      background: #22c55e1a;
+      border: 1px solid #22c55e4d;
+      color: #86efac;
+    }
+
+    .ad-msg.err {
+      background: #ef44441a;
+      border: 1px solid #ef44444d;
+      color: #fca5a5;
+    }
+
+    .ad-login {
+      max-width: 400px;
+      margin: 8vh auto 0;
+    }
+
+    .ad-mono {
+      font-family: 'JetBrains Mono', monospace;
+      direction: ltr;
+    }
+
+    .ad-actions {
+      display: flex;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+    }
+
+    .ad-mini {
+      font-size: 0.75rem;
+      padding: 0.3rem 0.7rem;
+      border-radius: 8px;
+      border: 1px solid var(--line-strong);
+      background: #ffffff05;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .ad-mini:hover {
+      color: var(--text);
+      background: #ffffff12;
+    }
+
+    .ad-mini.d {
+      border-color: #ef44444d;
+      color: #fca5a5;
+    }
+
+    .ad-mini.d:hover {
+      background: #ef44442e;
+    }
+
+    .ad-hidden {
+      display: none !important;
+    }
+
+    .ad-foot {
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 0.78rem;
+      margin-top: 2.5rem;
+    }
+
+    .ad-badge-admin {
+      background: linear-gradient(135deg, #22c55e, #38bdf8);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      font-weight: 700;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="glow-top"></div>
+
+  <!-- ============ شاشة تسجيل الدخول للأدمن ============ -->
+  <div id="loginView" class="ad-shell">
+    <div class="wrap">
+      <div class="ad-login glass">
+        <div class="ad-brand" style="justify-content: center; margin-bottom: 1.25rem">
+          <div class="ad-logo">🛡️</div>
+          <div>
+            <div class="ad-title">لوحة الأدمن</div>
+            <div class="ad-sub">دخول خاص بالمشرفين فقط</div>
+          </div>
+        </div>
+
+        <div id="loginMsg" class="ad-msg"></div>
+
+        <form id="loginForm">
+          <div class="ad-field">
+            <label for="phone">رقم الموبايل</label>
+            <input class="ad-input ad-mono" id="phone" type="tel" inputmode="tel" placeholder="01xxxxxxxxx"
+              autocomplete="username" required />
+          </div>
+          <div class="ad-field">
+            <label for="password">الباسورد</label>
+            <input class="ad-input" id="password" type="password" placeholder="••••••••" autocomplete="current-password"
+              required />
+          </div>
+          <button class="ad-btn ad-btn-p" style="width: 100%" type="submit" id="loginBtn">
+            دخول للوحة التحكم
+          </button>
+        </form>
+
+        <p style="text-align: center; margin-top: 1rem; font-size: 0.8rem">
+          <a class="text-slate-400 hover:text-slate-200" href="./index.html">→ رجوع لموقع الدروس</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ لوحة التحكم الكاملة ============ -->
+  <div id="panelView" class="ad-shell ad-hidden">
+    <div class="wrap">
+      <!-- الهيدر -->
+      <div class="ad-head">
+        <div class="ad-brand">
+          <div class="ad-logo">🛡️</div>
+          <div>
+            <div class="ad-title">
+              لوحة تحكم <span class="ad-badge-admin">الأدمن</span>
+            </div>
+            <div class="ad-sub" id="whoAmI">—</div>
+          </div>
+        </div>
+        <div class="ad-actions">
+          <a class="ad-btn ad-btn-g" href="./index.html">الموقع الرئيسي</a>
+          <button class="ad-btn ad-btn-d" id="logoutBtn">تسجيل خروج</button>
+        </div>
+      </div>
+
+      <div id="panelMsg" class="ad-msg"></div>
+
+      <!-- الإحصائيات -->
+      <div class="ad-stats">
+        <div class="ad-stat g">
+          <div class="n" id="stStudents">0</div>
+          <div class="l">طالب مسجّل</div>
+        </div>
+        <div class="ad-stat s">
+          <div class="n" id="stAdmins">0</div>
+          <div class="l">أدمن</div>
+        </div>
+        <div class="ad-stat a">
+          <div class="n" id="stWhitelist">0</div>
+          <div class="l">رقم مسموح</div>
+        </div>
+        <div class="ad-stat">
+          <div class="n" id="stPending">0</div>
+          <div class="l">مسموح ولم يسجّل</div>
+        </div>
+        <div class="ad-stat s">
+          <div class="n" id="stCompletions">0</div>
+          <div class="l">درس مكتمل</div>
+        </div>
+        <div class="ad-stat">
+          <div class="n" id="stAttempts">0</div>
+          <div class="l">محاولة اختبار</div>
+        </div>
+      </div>
+
+      <!-- التبويبات -->
+      <div class="ad-tabs">
+        <button class="ad-tab on" data-tab="overview">نظرة عامة</button>
+        <button class="ad-tab" data-tab="whitelist">الأرقام المسموحة</button>
+        <button class="ad-tab" data-tab="users">المستخدمين</button>
+      </div>
+
+      <!-- ====== نظرة عامة ====== -->
+      <div class="ad-panel on" id="tab-overview">
+        <div class="ad-grid2">
+          <div class="ad-card">
+            <h3>🏆 أعلى 5 طلاب</h3>
+            <div class="ad-table-wrap">
+              <table class="ad-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>الاسم</th>
+                    <th>النقاط</th>
+                  </tr>
+                </thead>
+                <tbody id="topBody">
+                  <tr>
+                    <td colspan="3" class="ad-empty">لا يوجد طلاب لسه</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="ad-card">
+            <h3>🕒 أحدث إنجازات الدروس</h3>
+            <div class="ad-table-wrap">
+              <table class="ad-table">
+                <thead>
+                  <tr>
+                    <th>الطالب</th>
+                    <th>الدرس</th>
+                    <th>الوقت</th>
+                  </tr>
+                </thead>
+                <tbody id="recentBody">
+                  <tr>
+                    <td colspan="3" class="ad-empty">لا يوجد نشاط لسه</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====== الأرقام المسموحة ====== -->
+      <div class="ad-panel" id="tab-whitelist">
+        <div class="ad-grid2">
+          <div class="ad-card">
+            <h3>➕ إضافة أرقام مسموحة</h3>
+            <div class="ad-field">
+              <label for="wlPhones">الرقم / الأرقام (كل رقم في سطر أو مفصول بفاصلة)</label>
+              <textarea class="ad-textarea" id="wlPhones" placeholder="01012345678&#10;01098765432"></textarea>
+            </div>
+            <div class="ad-row">
+              <div class="ad-field">
+                <label for="wlLabel">وصف (اختياري)</label>
+                <input class="ad-input" id="wlLabel" placeholder="مثال: دفعة أكتوبر" />
+              </div>
+              <div class="ad-field">
+                <label>&nbsp;</label>
+                <button class="ad-btn ad-btn-p" id="wlAddBtn">إضافة الأرقام</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="ad-card">
+            <h3>📋 قائمة الأرقام (<span id="wlCount">0</span>)</h3>
+            <div class="ad-table-wrap">
+              <table class="ad-table">
+                <thead>
+                  <tr>
+                    <th>الرقم</th>
+                    <th>الحالة</th>
+                    <th>مستخدم</th>
+                    <th>إجراء</th>
+                  </tr>
+                </thead>
+                <tbody id="wlBody">
+                  <tr>
+                    <td colspan="4" class="ad-empty">جاري التحميل…</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====== المستخدمين ====== -->
+      <div class="ad-panel" id="tab-users">
+        <div class="ad-card">
+          <h3>👥 كل المستخدمين (<span id="usCount">0</span>)</h3>
+          <div class="ad-table-wrap">
+            <table class="ad-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>الاسم</th>
+                  <th>الرقم</th>
+                  <th>الرتبة</th>
+                  <th>النقاط</th>
+                  <th>دروس</th>
+                  <th>اختبارات</th>
+                  <th>الدور</th>
+                  <th>إجراء</th>
+                </tr>
+              </thead>
+              <tbody id="usBody">
+                <tr>
+                  <td colspan="9" class="ad-empty">جاري التحميل…</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="ad-foot">© شبكة وعلوم — لوحة تحكم الأدمن</div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    // لوحة الأدمن — JavaScript مستقل (يتكلم مع نفس API الموقع)
+    // ============================================================
+    const TOKEN_KEY = 'swn-token-v1'
+    const $ = (id) => document.getElementById(id)
+
+    const getToken = () => {
+      try {
+        return localStorage.getItem(TOKEN_KEY) || ''
+      } catch {
+        return ''
+      }
+    }
+    const setToken = (t) => {
+      try {
+        t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY)
+      } catch { }
+    }
+
+    async function api(path, { method = 'GET', body, auth = true } = {}) {
+      const headers = {}
+      if (body !== undefined) headers['Content-Type'] = 'application/json'
+      const tok = getToken()
+      if (auth && tok) headers.Authorization = 'Bearer ' + tok
+      let res
+      try {
+        res = await fetch('/api' + path, {
+          method,
+          headers,
+          body: body === undefined ? undefined : JSON.stringify(body),
+        })
+      } catch {
+        throw new Error('مش قادر أوصل للسيرفر — اتأكد إنه شغّال')
+      }
+      let data = null
+      try {
+        data = await res.json()
+      } catch { }
+      if (!res.ok) throw new Error((data && data.error) || 'حصل خطأ (' + res.status + ')')
+      return data
+    }
+
+    // ---------- رسائل ----------
+    function msg(el, text, type = 'ok') {
+      el.textContent = text
+      el.className = 'ad-msg on ' + (type === 'err' ? 'err' : 'ok')
+      if (text) setTimeout(() => { el.className = 'ad-msg' }, 4000)
+    }
+
+    const esc = (s) =>
+      String(s == null ? '' : s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+
+    const fmtDate = (iso) => {
+      if (!iso) return '—'
+      try {
+        return new Date(iso).toLocaleString('ar-EG', { dateStyle: 'short', timeStyle: 'short' })
+      } catch {
+        return iso
+      }
+    }
+
+    // ---------- عرض/إخفاء الشاشات ----------
+    function showLogin() {
+      $('loginView').classList.remove('ad-hidden')
+      $('panelView').classList.add('ad-hidden')
+    }
+    function showPanel() {
+      $('loginView').classList.add('ad-hidden')
+      $('panelView').classList.remove('ad-hidden')
+    }
+
+    // ---------- تسجيل الدخول ----------
+    $('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault()
+      const btn = $('loginBtn')
+      btn.disabled = true
+      btn.textContent = 'جاري الدخول…'
+      try {
+        const phone = $('phone').value.trim()
+        const password = $('password').value
+        const data = await api('/auth/login', { method: 'POST', body: { phone, password }, auth: false })
+        if (!data.user || data.user.role !== 'admin') {
+          throw new Error('الحساب ده مش حساب أدمن')
+        }
+        setToken(data.token)
+        $('password').value = ''
+        showPanel()
+        renderWho(data.user)
+        loadAll()
+      } catch (err) {
+        msg($('loginMsg'), err.message, 'err')
+      } finally {
+        btn.disabled = false
+        btn.textContent = 'دخول للوحة التحكم'
+      }
+    })
+
+    // ---------- تسجيل الخروج ----------
+    $('logoutBtn').addEventListener('click', async () => {
+      try {
+        await api('/auth/logout', { method: 'POST' })
+      } catch { }
+      setToken('')
+      showLogin()
+      msg($('loginMsg'), 'تم تسجيل الخروج', 'ok')
+    })
+
+    function renderWho(user) {
+      $('whoAmI').textContent = (user.username || 'أدمن') + ' — ' + (user.phonePretty || user.phone || '')
+    }
+
+    // ---------- التبويبات ----------
+    document.querySelectorAll('.ad-tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.ad-tab').forEach((t) => t.classList.remove('on'))
+        document.querySelectorAll('.ad-panel').forEach((p) => p.classList.remove('on'))
+        tab.classList.add('on')
+        $('tab-' + tab.dataset.tab).classList.add('on')
+      })
+    })
+
+    // ---------- تحميل كل البيانات ----------
+    async function loadAll() {
+      try {
+        const [ov, wl, us] = await Promise.all([
+          api('/admin/overview'),
+          api('/admin/whitelist'),
+          api('/admin/users'),
+        ])
+        renderOverview(ov)
+        renderWhitelist(wl.items || [])
+        renderUsers(us.items || [])
+      } catch (err) {
+        if (String(err.message).includes('لازم تسجّل') || String(err.message).includes('الأدمن')) {
+          setToken('')
+          showLogin()
+          msg($('loginMsg'), 'انتهت الجلسة، سجّل دخول تاني', 'err')
+        } else {
+          msg($('panelMsg'), err.message, 'err')
+        }
+      }
+    }
+
+    // ---------- نظرة عامة ----------
+    function renderOverview(o) {
+      $('stStudents').textContent = o.users ?? 0
+      $('stAdmins').textContent = o.admins ?? 0
+      $('stWhitelist').textContent = o.whitelisted ?? 0
+      $('stPending').textContent = o.pending ?? 0
+      $('stCompletions').textContent = o.completions ?? 0
+      $('stAttempts').textContent = o.attempts ?? 0
+
+      const top = o.top || []
+      $('topBody').innerHTML = top.length
+        ? top
+          .map(
+            (r, i) =>
+              '<tr><td class="ad-mono">' + (i + 1) + '</td><td>' + esc(r.username) +
+              '</td><td class="ad-mono" style="color:#86efac">' + r.score + '</td></tr>'
+          )
+          .join('')
+        : '<tr><td colspan="3" class="ad-empty">لا يوجد طلاب لسه</td></tr>'
+
+      const rec = o.recent || []
+      $('recentBody').innerHTML = rec.length
+        ? rec
+          .map(
+            (r) =>
+              '<tr><td>' + esc(r.username) + '</td><td class="ad-mono" style="direction:ltr">' +
+              esc(r.lesson_id) + '</td><td style="white-space:nowrap">' + fmtDate(r.completed_at) + '</td></tr>'
+          )
+          .join('')
+        : '<tr><td colspan="3" class="ad-empty">لا يوجد نشاط لسه</td></tr>'
+    }
+
+    // ---------- الأرقام المسموحة ----------
+    function renderWhitelist(items) {
+      $('wlCount').textContent = items.length
+      $('wlBody').innerHTML = items.length
+        ? items
+          .map((it) => {
+            const active = it.is_active ? 'g' : 'r'
+            const stateTxt = it.is_active ? 'مفعّل' : 'موقوف'
+            const userTxt = it.username
+              ? '<span class="ad-pill s">' + esc(it.username) + '</span>'
+              : '<span class="ad-pill a">لم يسجّل</span>'
+            return (
+              '<tr><td class="ad-mono">' + esc(it.phone) + '</td>' +
+              '<td><span class="ad-pill ' + active + '">' + stateTxt + '</span></td>' +
+              '<td>' + userTxt + '</td>' +
+              '<td><div class="ad-actions">' +
+              '<button class="ad-mini" data-wl-toggle="' + esc(it.phone) + '" data-wl-active="' + (it.is_active ? '1' : '0') + '">' +
+              (it.is_active ? 'إيقاف' : 'تفعيل') + '</button>' +
+              '<button class="ad-mini d" data-wl-del="' + esc(it.phone) + '">حذف</button>' +
+              '</div></td></tr>'
+            )
+          })
+          .join('')
+        : '<tr><td colspan="4" class="ad-empty">لا يوجد أرقام مسموحة لسه</td></tr>'
+    }
+
+    $('wlAddBtn').addEventListener('click', async () => {
+      const raw = $('wlPhones').value.trim()
+      if (!raw) return msg($('panelMsg'), 'اكتب رقم واحد على الأقل', 'err')
+      const label = $('wlLabel').value.trim()
+      try {
+        const res = await api('/admin/whitelist', { method: 'POST', body: { phones: raw, label } })
+        let txt = 'تم إضافة ' + res.count + ' رقم'
+        if (res.invalid && res.invalid.length) txt += ' — أرقام غير صحيحة: ' + res.invalid.join('، ')
+        msg($('panelMsg'), txt, 'ok')
+        $('wlPhones').value = ''
+        $('wlLabel').value = ''
+        loadAll()
+      } catch (err) {
+        msg($('panelMsg'), err.message, 'err')
+      }
+    })
+
+    document.addEventListener('click', async (e) => {
+      const t = e.target
+      if (!(t instanceof HTMLElement)) return
+      const phone = t.dataset.wlToggle
+      if (phone) {
+        const active = t.dataset.wlActive === '1' ? 0 : 1
+        try {
+          await api('/admin/whitelist/' + encodeURIComponent(phone), {
+            method: 'PATCH',
+            body: { is_active: active },
+          })
+          loadAll()
+        } catch (err) {
+          msg($('panelMsg'), err.message, 'err')
+        }
+      }
+      const del = t.dataset.wlDel
+      if (del) {
+        if (!confirm('متأكد إنك عايز تحذف الرقم ' + del + '؟')) return
+        try {
+          await api('/admin/whitelist/' + encodeURIComponent(del), { method: 'DELETE' })
+          msg($('panelMsg'), 'تم حذف الرقم', 'ok')
+          loadAll()
+        } catch (err) {
+          msg($('panelMsg'), err.message, 'err')
+        }
+      }
+    })
+
+    // ---------- المستخدمين ----------
+    function renderUsers(items) {
+      $('usCount').textContent = items.length
+      $('usBody').innerHTML = items.length
+        ? items
+          .map(
+            (u) =>
+              '<tr>' +
+              '<td class="ad-mono">' + u.id + '</td>' +
+              '<td>' + esc(u.username) + '</td>' +
+              '<td class="ad-mono">' + esc(u.phone) + '</td>' +
+              '<td><span class="ad-pill">' + esc(u.rank) + '</span></td>' +
+              '<td class="ad-mono" style="color:#86efac">' + u.score + '</td>' +
+              '<td class="ad-mono">' + u.lessonsDone + '</td>' +
+              '<td class="ad-mono">' + u.attempts + '</td>' +
+              '<td><span class="ad-pill ' + (u.role === 'admin' ? 'g' : 's') + '">' + esc(u.role) + '</span></td>' +
+              '<td><div class="ad-actions">' +
+              '<button class="ad-mini" data-us-edit="' + u.id + '">تعديل</button>' +
+              '<button class="ad-mini d" data-us-del="' + u.id + '">حذف</button>' +
+              '</div></td></tr>'
+          )
+          .join('')
+        : '<tr><td colspan="9" class="ad-empty">لا يوجد مستخدمين لسه</td></tr>'
+    }
+
+    document.addEventListener('click', async (e) => {
+      const t = e.target
+      if (!(t instanceof HTMLElement)) return
+
+      const editId = t.dataset.usEdit
+      if (editId) {
+        const newScore = prompt('النقاط الجديدة (سيبه فاضي لو مش عايز تغيّر):')
+        const newPass = prompt('باسورد جديد (سيبه فاضي لو مش عايز تغيّر):')
+        const newRole = prompt('الدور (اكتب admin أو student — سيبه فاضي لو مش عايز تغيّر):')
+        const body = {}
+        if (newScore !== null && newScore.trim() !== '' && !isNaN(Number(newScore))) body.score = Number(newScore)
+        if (newPass) body.newPassword = newPass
+        if (newRole === 'admin' || newRole === 'student') body.role = newRole
+        if (!Object.keys(body).length) return
+        try {
+          await api('/admin/users/' + editId, { method: 'PATCH', body })
+          msg($('panelMsg'), 'تم تعديل بيانات المستخدم', 'ok')
+          loadAll()
+        } catch (err) {
+          msg($('panelMsg'), err.message, 'err')
+        }
+      }
+
+      const delId = t.dataset.usDel
+      if (delId) {
+        if (!confirm('متأكد إنك عايز تحذف المستخدم رقم ' + delId + '؟ ده مش هيرجع!')) return
+        try {
+          await api('/admin/users/' + delId, { method: 'DELETE' })
+          msg($('panelMsg'), 'تم حذف المستخدم', 'ok')
+          loadAll()
+        } catch (err) {
+          msg($('panelMsg'), err.message, 'err')
+        }
+      }
+    })
+
+      // ---------- إقلاع ----------
+      ; (async function boot() {
+        const tok = getToken()
+        if (!tok) return showLogin()
+        try {
+          const me = await api('/auth/me')
+          if (!me.user || me.user.role !== 'admin') {
+            setToken('')
+            return showLogin()
+          }
+          showPanel()
+          renderWho(me.user)
+          loadAll()
+        } catch {
+          setToken('')
+          showLogin()
+        }
+      })()
+  </script>
+</body>
+
+</html>
