@@ -679,6 +679,12 @@
       } catch { }
     }
 
+    // ---------- هل احنا على استضافة ثابتة (GitHub Pages) بدون سيرفر؟ ----------
+    // GitHub Pages بيخدم ملفات ثابتة بس ومش بيشغّل Node،
+    // فكل طلبات /api بترجع 405. بنكتشف الحالة دي ونوري رسالة واضحة.
+    const IS_STATIC_HOST =
+      /github\.io$/i.test(location.hostname) || /gitlab\.io$/i.test(location.hostname)
+
     async function api(path, { method = 'GET', body, auth = true } = {}) {
       const headers = {}
       if (body !== undefined) headers['Content-Type'] = 'application/json'
@@ -693,6 +699,13 @@
         })
       } catch {
         throw new Error('مش قادر أوصل للسيرفر — اتأكد إنه شغّال')
+      }
+      // 405 على استضافة ثابتة = مفيش API أصلاً
+      if (res.status === 405 && IS_STATIC_HOST) {
+        throw new Error(
+          'الموقع مرفوع على GitHub Pages ومفيش سيرفر شغّال هناك، فاللوحة مش هتشتغل. ' +
+            'شغّل السيرفر عندك بالأمر «node server.js» وافتح http://127.0.0.1:5178/admin.html'
+        )
       }
       let data = null
       try {

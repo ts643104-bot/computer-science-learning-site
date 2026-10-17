@@ -42,5 +42,10 @@ temp/
 
 # ---------- أدوات محلية ----------
 patch-bundle.js
+patch-whatsapp.js
+patch-whatsapp2.js
 verify.mjs
+verify-icons.mjs
+shot-footer.mjs
 footer_old.txt
+*.png
