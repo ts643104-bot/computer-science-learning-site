@@ -39,3 +39,8 @@ desktop.ini
 tmp/
 temp/
 *.tmp
+
+# ---------- أدوات محلية ----------
+patch-bundle.js
+verify.mjs
+footer_old.txt
