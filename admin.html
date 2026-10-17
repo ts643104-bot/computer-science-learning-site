@@ -641,78 +641,60 @@
         </div>
       </div>
 
-      <div class="ad-foot">© شبكة وعلوم — لوحة تحكم الأدمن</div>
+      <div class="ad-foot">
+        © شبكة وعلوم — لوحة تحكم الأدمن
+        <br />
+        <span style="opacity: 0.75">تصميم المهندس طه سلطان / タハ A3</span>
+      </div>
     </div>
   </div>
 
+  <script src="./api-client.js"></script>
   <script>
     // ============================================================
-    // لوحة الأدمن — JavaScript مستقل (يتكلم مع نفس API الموقع)
+    // لوحة الأدمن — بتتكلم مع Google Apps Script (مفيش سيرفر)
+    // تصميم المهندس طه سلطان / タハ A3
     // ============================================================
-    const TOKEN_KEY = 'swn-token-v1'
     const $ = (id) => document.getElementById(id)
 
-    // ---------- حماية: الصفحة لازم تتفتح من السيرفر مش بالدبل كليك ----------
-    // لو فتحت الملف مباشرة (file://) الطلبات هتفشل بـ 405 لأن مفيش سيرفر يرد.
-    if (location.protocol === 'file:') {
-      document.body.innerHTML =
-        '<div style="font-family:sans-serif;padding:3rem;text-align:center;direction:rtl;background:#070c17;color:#f1f5f9;min-height:100vh">' +
-        '<h1 style="font-size:1.6rem;margin-bottom:1rem">⚠️ افتح اللوحة من السيرفر</h1>' +
-        '<p style="line-height:2;color:#94a3b8">انت فاتح الملف مباشرة من الجهاز، ولوحة الأدمن محتاجة السيرفر شغّال.</p>' +
-        '<p style="margin-top:1.5rem;font-size:1.1rem">افتح الرابط ده بدل كده:</p>' +
-        '<p style="margin-top:.5rem"><a href="http://127.0.0.1:5178/admin.html" style="color:#4ade80;font-size:1.15rem;font-weight:700">http://127.0.0.1:5178/admin.html</a></p>' +
-        '<p style="margin-top:2rem;color:#64748b;font-size:.9rem">ولو السيرفر مش شغّال، افتح Terminal وشغّل:<br><code style="color:#7dd3fc">node server.js</code></p>' +
-        '</div>'
-      throw new Error('file:// protocol — stopped before app init')
+    // ---------- تحويل أخطاء الـ API لرسالة واضحة ----------
+    function fail(err) {
+      throw new Error((err && err.message) || 'حصل خطأ غير معروف')
     }
 
-    const getToken = () => {
-      try {
-        return localStorage.getItem(TOKEN_KEY) || ''
-      } catch {
-        return ''
-      }
-    }
-    const setToken = (t) => {
-      try {
-        t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY)
-      } catch { }
-    }
+    // كل النداءات بتمر من هنا — نفس التوقيع القديم عشان أقل تعديل
+    async function api(path, { method = 'GET', body } = {}) {
+      const A = window.Api
+      if (!A) throw new Error('مكتبة الاتصال مش محمّلة')
 
-    // ---------- هل احنا على استضافة ثابتة (GitHub Pages) بدون سيرفر؟ ----------
-    // GitHub Pages بيخدم ملفات ثابتة بس ومش بيشغّل Node،
-    // فكل طلبات /api بترجع 405. بنكتشف الحالة دي ونوري رسالة واضحة.
-    const IS_STATIC_HOST =
-      /github\.io$/i.test(location.hostname) || /gitlab\.io$/i.test(location.hostname)
-
-    async function api(path, { method = 'GET', body, auth = true } = {}) {
-      const headers = {}
-      if (body !== undefined) headers['Content-Type'] = 'application/json'
-      const tok = getToken()
-      if (auth && tok) headers.Authorization = 'Bearer ' + tok
-      let res
-      try {
-        res = await fetch('/api' + path, {
-          method,
-          headers,
-          body: body === undefined ? undefined : JSON.stringify(body),
-        })
-      } catch {
-        throw new Error('مش قادر أوصل للسيرفر — اتأكد إنه شغّال')
+      // نطابق المسارات القديمة بالعمليات الجديدة
+      switch (path) {
+        case '/auth/login':
+          return A.login(body.phone, body.password)
+        case '/auth/logout':
+          return A.logout()
+        case '/auth/me':
+          return A.me()
+        case '/admin/overview':
+          return A.adminOverview()
+        case '/admin/whitelist':
+          return method === 'POST' ? A.addToWhitelist(body.phones, body.label) : A.getWhitelist()
+        case '/admin/users':
+          return A.getUsers()
+        default:
+          // /admin/whitelist/:phone  و  /admin/users/:id
+          if (path.startsWith('/admin/whitelist/')) {
+            const phone = decodeURIComponent(path.slice('/admin/whitelist/'.length))
+            if (method === 'PATCH') return A.toggleWhitelist(phone, body.is_active)
+            if (method === 'DELETE') return A.deleteWhitelist(phone)
+          }
+          if (path.startsWith('/admin/users/')) {
+            const id = path.slice('/admin/users/'.length)
+            if (method === 'PATCH') return A.updateUser(id, body)
+            if (method === 'DELETE') return A.deleteUser(id)
+          }
+          throw new Error('المسار ده مش معروف: ' + path)
       }
-      // 405 على استضافة ثابتة = مفيش API أصلاً
-      if (res.status === 405 && IS_STATIC_HOST) {
-        throw new Error(
-          'الموقع مرفوع على GitHub Pages ومفيش سيرفر شغّال هناك، فاللوحة مش هتشتغل. ' +
-            'شغّل السيرفر عندك بالأمر «node server.js» وافتح http://127.0.0.1:5178/admin.html'
-        )
-      }
-      let data = null
-      try {
-        data = await res.json()
-      } catch { }
-      if (!res.ok) throw new Error((data && data.error) || 'حصل خطأ (' + res.status + ')')
-      return data
     }
 
     // ---------- رسائل ----------
@@ -757,11 +739,10 @@
       try {
         const phone = $('phone').value.trim()
         const password = $('password').value
-        const data = await api('/auth/login', { method: 'POST', body: { phone, password }, auth: false })
+        const data = await api('/auth/login', { method: 'POST', body: { phone, password } })
         if (!data.user || data.user.role !== 'admin') {
           throw new Error('الحساب ده مش حساب أدمن')
         }
-        setToken(data.token)
         $('password').value = ''
         showPanel()
         renderWho(data.user)
@@ -779,7 +760,6 @@
       try {
         await api('/auth/logout', { method: 'POST' })
       } catch { }
-      setToken('')
       showLogin()
       msg($('loginMsg'), 'تم تسجيل الخروج', 'ok')
     })
@@ -985,24 +965,21 @@
       }
     })
 
-      // ---------- إقلاع ----------
-      ; (async function boot() {
-        const tok = getToken()
-        if (!tok) return showLogin()
-        try {
-          const me = await api('/auth/me')
-          if (!me.user || me.user.role !== 'admin') {
-            setToken('')
-            return showLogin()
-          }
-          showPanel()
-          renderWho(me.user)
-          loadAll()
-        } catch {
-          setToken('')
-          showLogin()
+    // ---------- إقلاع ----------
+    ;(async function boot() {
+      try {
+        const me = await api('/auth/me')
+        if (!me.user || me.user.role !== 'admin') {
+          return showLogin()
         }
-      })()
+        showPanel()
+        renderWho(me.user)
+        loadAll()
+      } catch {
+        // مفيش جلسة صالحة — نور شاشة الدخول
+        showLogin()
+      }
+    })()
   </script>
 </body>
 
