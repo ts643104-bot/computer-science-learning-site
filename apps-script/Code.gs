@@ -1,281 +1,20 @@
-/**
- * ============================================================================
- *  شبكة وعلوم — Backend كامل على Google Apps Script + Google Sheets
- *  تصميم المهندس طه سلطان / タハ A3
- * ============================================================================
- *
- *  إزاي تحطّه:
- *   1) افتح الشيت بتاعك على Google Sheets
- *   2) من القائمة: Extensions → Apps Script
- *   3) امسح أي كود موجود والصق الملف ده كله
- *   4) اضغط Save (القرص)
- *   5) Deploy → New deployment → Type: "Web app"
- *        - Execute as:  Me
- *        - Who has access:  Anyone
- *   6) خد الـ Web app URL (اللي بيكمل بـ /exec) وحطه في الموقع
- *
- *  بعد أي تعديل على الكود:
- *   Deploy → Manage deployments → ✏️ → Version: New version → Deploy
- *   (لو عملت Save بس مش هيتحدّث الرابط)
- * ============================================================================
- */
-
-// ============================================================================
-//  الإعدادات — غيّرها لو احتجت
-// ============================================================================
-
-/** مفتاح سري بسيط — بيتبعت مع كل طلب من الموقع (طبقة حماية إضافية) */
 var API_KEY = 'A3-SHABAKA-WA-3OLOOM-2026'
+var TELEGRAM_URL = 'https://t.me/a3Taha'
 
-/** أسماء الأوراق (Sheets tabs) */
-var SHEET_USERS = 'users'
-var SHEET_WHITELIST = 'whitelist'
-var SHEET_PROGRESS = 'progress'
-var SHEET_COMMENTS = 'comments'
-
-/** أسماء الأعمدة لكل ورقة — الترتيب مهم جدًا */
-var HEADERS = {
-  users: [
-    'phone', // A  رقم الموبايل (المفتاح الأساسي)
-    'username', // B  اسم المستخدم
-    'passHash', // C  الباسورد مشفّر (SHA-256)
-    'score', // D  مجموع النقاط
-    'role', // E  student | admin
-    'createdAt', // F  تاريخ التسجيل (ISO)
-    'lastLogin', // G  آخر دخول (ISO)
-  ],
-  whitelist: [
-    'phone', // A  رقم الموبايل
-    'label', // B  وصف (اختياري)
-    'isActive', // C  1 = مفعّل / 0 = موقوف
-    'addedBy', // D  مين اللي ضافه
-    'createdAt', // E  تاريخ الإضافة
-  ],
-  progress: [
-    'phone', // A  رقم الطالب
-    'lessonId', // B  معرّف الدرس
-    'completedAt', // C  تاريخ الإكمال
-    'quizCorrect', // D  عدد الإجابات الصح
-    'quizTotal', // E  إجمالي الأسئلة
-    'points', // F  النقاط المكتسبة
-  ],
-  comments: [
-    'timestamp', // A  وقت التعليق (ISO)
-    'phone', // B  رقم صاحب التعليق
-    'username', // C  اسم صاحب التعليق
-    'lessonId', // D  معرّف الدرس
-    'rating', // E  التقييم بالنجوم (1-5)
-    'comment', // F  نص التعليق
-  ],
+var SHEETS = {
+  users: ['phone', 'username', 'passHash', 'score', 'role', 'createdAt', 'lastLogin'],
+  whitelist: ['phone', 'label', 'isActive', 'addedBy', 'createdAt'],
+  progress: ['phone', 'lessonId', 'completedAt', 'quizCorrect', 'quizTotal', 'points'],
+  comments: ['timestamp', 'phone', 'username', 'lessonId', 'rating', 'comment'],
 }
 
-/** قواعد النقاط */
 var POINTS = {
-  LESSON_DONE: 10,
-  PER_CORRECT: 5,
-  PERFECT_BONUS: 10,
-  FIRST_BLOOD: 15,
+  lessonDone: 10,
+  perCorrect: 5,
+  perfectBonus: 10,
+  firstLesson: 15,
 }
 
-// ============================================================================
-//  نقطة الدخول (GET) — للتجربة السريعة من المتصفح
-// ============================================================================
-
-function doGet(e) {
-  var action = (e && e.parameter && e.parameter.action) || 'ping'
-
-  if (action === 'ping') {
-    return json({
-      ok: true,
-      service: 'شبكة وعلوم API',
-      version: '2.0',
-      sheets: Object.keys(HEADERS),
-      time: new Date().toISOString(),
-    })
-  }
-
-  // قراءة التعليقات عبر GET كمان (أسهل للكاش)
-  if (action === 'getComments') {
-    return json(getComments_(e.parameter.lessonId))
-  }
-
-  return json({ ok: false, error: 'الإجراء ده مش موجود' })
-}
-
-// ============================================================================
-//  نقطة الدخول (POST) — كل عمليات الموقع
-// ============================================================================
-
-function doPost(e) {
-  try {
-    var body
-    try {
-      body = JSON.parse((e && e.postData && e.postData.contents) || '{}')
-    } catch (err) {
-      return json({ ok: false, error: 'البيانات المرسلة مش صحيحة' })
-    }
-
-    var action = body.action
-
-    // ping مفتوح — كل حاجة تانية محتاجة الـ key
-    if (action !== 'ping' && body.apiKey !== API_KEY) {
-      return json({ ok: false, error: 'مفتاح غير صحيح' })
-    }
-
-    switch (action) {
-      case 'ping':
-        return json({ ok: true, service: 'شبكة وعلوم API', version: '2.0' })
-
-      // ---------------- التسجيل والدخول ----------------
-      case 'checkPhone':
-        return json(checkPhone_(body.phone))
-      case 'register':
-        return json(register_(body))
-      case 'login':
-        return json(login_(body))
-      case 'me':
-        return json(me_(body))
-
-      // ---------------- النقاط والتقدم ----------------
-      case 'updateScore':
-        return json(updateScore_(body))
-      case 'completeLesson':
-        return json(completeLesson_(body))
-      case 'quiz':
-        return json(quiz_(body))
-      case 'getProgress':
-        return json(getProgress_(body))
-
-      // ---------------- التعليقات والتقييمات ----------------
-      case 'addComment':
-        return json(addComment_(body))
-      case 'getComments':
-        return json(getComments_(body.lessonId))
-
-      // ---------------- الأدمن ----------------
-      case 'adminOverview':
-        return json(adminOverview_(body))
-      case 'getWhitelist':
-        return json(getWhitelist_(body))
-      case 'addToWhitelist':
-        return json(addToWhitelist_(body))
-      case 'toggleWhitelist':
-        return json(toggleWhitelist_(body))
-      case 'deleteWhitelist':
-        return json(deleteWhitelist_(body))
-      case 'getUsers':
-        return json(getUsers_(body))
-      case 'updateUser':
-        return json(updateUser_(body))
-      case 'deleteUser':
-        return json(deleteUser_(body))
-
-      default:
-        return json({ ok: false, error: 'الإجراء ده مش معروف: ' + action })
-    }
-  } catch (err) {
-    return json({ ok: false, error: 'خطأ في السيرفر: ' + (err && err.message) })
-  }
-}
-
-// ============================================================================
-//  أدوات مساعدة
-// ============================================================================
-
-/** يرجّع JSON مع هيدرز CORS كاملة */
-function json(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(
-    ContentService.MimeType.JSON
-  )
-}
-
-/** بيجيب ورقة بالاسم، وبيعملها الهيدرز لو لسه جديدة */
-function sheet_(name) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet()
-  var sh = ss.getSheetByName(name)
-  if (!sh) {
-    sh = ss.insertSheet(name)
-  }
-  // لو الورقة فاضية، اكتب الهيدرز
-  if (sh.getLastRow() === 0) {
-    sh.appendRow(HEADERS[name])
-    sh.getRange(1, 1, 1, HEADERS[name].length).setFontWeight('bold')
-    sh.setFrozenRows(1)
-  }
-  return sh
-}
-
-/** بيقرا كل صفوف ورقة كمصفوفة أوبجكتس */
-function rows_(name) {
-  var sh = sheet_(name)
-  var values = sh.getDataRange().getValues()
-  if (values.length <= 1) return []
-
-  var headers = values[0]
-  var out = []
-  for (var i = 1; i < values.length; i++) {
-    var row = values[i]
-    // تجاهل الصفوف الفاضية
-    if (row.join('').trim() === '') continue
-    var obj = { _row: i + 1 } // رقم الصف الحقي في الشيت
-    for (var c = 0; c < headers.length; c++) {
-      obj[String(headers[c])] = row[c]
-    }
-    out.push(obj)
-  }
-  return out
-}
-
-/** بيدوّر على صف بمفتاح معيّن، وبيرجّع الأوبجكت أو null */
-function findRow_(name, keyName, keyValue) {
-  var all = rows_(name)
-  for (var i = 0; i < all.length; i++) {
-    if (String(all[i][keyName]) === String(keyValue)) return all[i]
-  }
-  return null
-}
-
-/** تشفير الباسورد — SHA-256 مع ملح بسيط */
-function hash_(password) {
-  var salted = 'swn::' + password + '::a3'
-  var raw = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, salted)
-  var hex = ''
-  for (var i = 0; i < raw.length; i++) {
-    var b = (raw[i] + 256) % 256
-    if (b < 16) hex += '0'
-    hex += b.toString(16)
-  }
-  return hex
-}
-
-/** توكن جلسة بسيط */
-function makeToken_(phone) {
-  return Utilities.base64EncodeWebSafe(
-    phone + '::' + new Date().getTime() + '::' + Math.random()
-  )
-}
-
-/** تنضيف وتوحيد رقم الموبايل — نفس قواعد الموقع */
-function normalizePhone_(input) {
-  if (!input) return ''
-  var p = String(input).replace(/[\s\-()_.]/g, '')
-  if (p.indexOf('00') === 0) p = '+' + p.substring(2)
-  // موبايل مصري: 01 (0/1/2/5) + 8 أرقام
-  if (/^01[0125][0-9]{8}$/.test(p)) return p
-  // رقم دولي
-  if (/^\+[1-9][0-9]{7,14}$/.test(p)) return p
-  return ''
-}
-
-/** تنسيق الرقم للعرض */
-function prettyPhone_(phone) {
-  if (/^01[0125][0-9]{8}$/.test(phone)) {
-    return phone.substring(0, 4) + ' + phone.substring(4, 7) + ' + phone.substring(7)
-  }
-  return phone
-}
-
-/** الرُتب حسب النقاط */
 var RANKS = [
   { min: 0, name: 'مبتدئ خالص', badge: '🌱' },
   { min: 60, name: 'بيتعلم بجد', badge: '📘' },
@@ -284,102 +23,261 @@ var RANKS = [
   { min: 600, name: 'محترف', badge: '🏆' },
 ]
 
-function rankFor_(score) {
-  var out = RANKS[0]
-  for (var i = 0; i < RANKS.length; i++) {
-    if (score >= RANKS[i].min) out = RANKS[i]
+function doGet(e) {
+  var params = (e && e.parameter) || {}
+  var action = params.action || 'ping'
+
+  if (action === 'ping') return reply(pingInfo())
+  if (action === 'getComments') return reply(listComments(params.lessonId))
+
+  return reply({ ok: false, error: 'الإجراء ده مش موجود' })
+}
+
+function doPost(e) {
+  var body
+  try {
+    body = JSON.parse((e && e.postData && e.postData.contents) || '{}')
+  } catch (err) {
+    return reply({ ok: false, error: 'البيانات المرسلة مش صحيحة' })
   }
-  var next = null
-  for (var j = 0; j < RANKS.length; j++) {
-    if (RANKS[j].min > score) {
-      next = { name: RANKS[j].name, need: RANKS[j].min - score, at: RANKS[j].min }
-      break
+
+  if (body.action !== 'ping' && body.apiKey !== API_KEY) {
+    return reply({ ok: false, error: 'مفتاح غير صحيح' })
+  }
+
+  var handlers = {
+    ping: pingInfo,
+    checkPhone: function (b) {
+      return checkPhone(b.phone)
+    },
+    register: register,
+    login: login,
+    me: me,
+    updateScore: updateScore,
+    completeLesson: completeLesson,
+    quiz: submitQuiz,
+    getProgress: getProgress,
+    addComment: addComment,
+    getComments: function (b) {
+      return listComments(b.lessonId)
+    },
+    adminOverview: adminOverview,
+    getWhitelist: getWhitelist,
+    addToWhitelist: addToWhitelist,
+    toggleWhitelist: toggleWhitelist,
+    deleteWhitelist: deleteWhitelist,
+    getUsers: getUsers,
+    updateUser: updateUser,
+    deleteUser: deleteUser,
+  }
+
+  var handler = handlers[body.action]
+  if (!handler) return reply({ ok: false, error: 'الإجراء ده مش معروف: ' + body.action })
+
+  try {
+    return reply(handler(body))
+  } catch (err) {
+    return reply({ ok: false, error: 'خطأ في السيرفر: ' + (err && err.message) })
+  }
+}
+
+function reply(payload) {
+  return ContentService.createTextOutput(JSON.stringify(payload)).setMimeType(
+    ContentService.MimeType.JSON
+  )
+}
+
+function pingInfo() {
+  return {
+    ok: true,
+    service: 'شبكة وعلوم API',
+    version: '2.0',
+    sheets: Object.keys(SHEETS),
+    telegram: TELEGRAM_URL,
+    time: new Date().toISOString(),
+  }
+}
+
+function openSheet(name) {
+  var book = SpreadsheetApp.getActiveSpreadsheet()
+  var sheet = book.getSheetByName(name)
+
+  if (!sheet) sheet = book.insertSheet(name)
+
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(SHEETS[name])
+    sheet.getRange(1, 1, 1, SHEETS[name].length).setFontWeight('bold')
+    sheet.setFrozenRows(1)
+  }
+
+  return sheet
+}
+
+function readSheet(name) {
+  var values = openSheet(name).getDataRange().getValues()
+  if (values.length <= 1) return []
+
+  var headers = values[0]
+  var records = []
+
+  for (var r = 1; r < values.length; r++) {
+    var line = values[r]
+    if (line.join('').trim() === '') continue
+
+    var record = { rowNumber: r + 1 }
+    for (var c = 0; c < headers.length; c++) {
+      record[String(headers[c])] = line[c]
     }
+    records.push(record)
   }
-  return {
-    name: out.name,
-    badge: out.badge,
-    next: next,
-  }
+
+  return records
 }
 
-/** الشكل العام للمستخدم (بدون باسورد) */
-function publicUser_(u) {
-  if (!u) return null
-  var score = Number(u.score) || 0
+function findRecord(sheetName, field, value) {
+  var records = readSheet(sheetName)
+  for (var i = 0; i < records.length; i++) {
+    if (String(records[i][field]) === String(value)) return records[i]
+  }
+  return null
+}
+
+function columnOf(sheetName, field) {
+  return SHEETS[sheetName].indexOf(field) + 1
+}
+
+function hashPassword(plain) {
+  var bytes = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256,
+    'swn::' + plain + '::a3'
+  )
+
+  var out = ''
+  for (var i = 0; i < bytes.length; i++) {
+    var b = (bytes[i] + 256) % 256
+    out += (b < 16 ? '0' : '') + b.toString(16)
+  }
+  return out
+}
+
+function issueToken(phone) {
+  return Utilities.base64EncodeWebSafe(phone + '::' + Date.now() + '::' + Math.random())
+}
+
+function cleanPhone(input) {
+  if (!input) return ''
+
+  var value = String(input).replace(/[\s\-()_.]/g, '')
+  if (value.indexOf('00') === 0) value = '+' + value.substring(2)
+
+  if (/^01[0125][0-9]{8}$/.test(value)) return value
+  if (/^\+[1-9][0-9]{7,14}$/.test(value)) return value
+
+  return ''
+}
+
+function displayPhone(phone) {
+  if (!/^01[0125][0-9]{8}$/.test(phone)) return phone
+  return phone.substring(0, 4) + ' + phone.substring(4, 7) + ' + phone.substring(7)
+}
+
+function rankOf(score) {
+  var current = RANKS[0]
+  var next = null
+
+  for (var i = 0; i < RANKS.length; i++) {
+    if (score >= RANKS[i].min) current = RANKS[i]
+    else if (!next) next = { name: RANKS[i].name, need: RANKS[i].min - score, at: RANKS[i].min }
+  }
+
+  return { name: current.name, badge: current.badge, next: next }
+}
+
+function toPublicUser(record) {
+  if (!record) return null
+
+  var score = Number(record.score) || 0
+  var phone = String(record.phone)
+
   return {
-    phone: String(u.phone),
-    phonePretty: prettyPhone_(String(u.phone)),
-    username: String(u.username),
-    role: String(u.role || 'student'),
+    phone: phone,
+    phonePretty: displayPhone(phone),
+    username: String(record.username),
+    role: String(record.role || 'student'),
     score: score,
-    rank: rankFor_(score),
-    createdAt: String(u.createdAt || ''),
-    lastLogin: String(u.lastLogin || ''),
+    rank: rankOf(score),
+    createdAt: String(record.createdAt || ''),
+    lastLogin: String(record.lastLogin || ''),
   }
 }
 
-/** بيجيب المستخدم من التوكن (توكن فيه الرقم) */
-function userFromToken_(token) {
-  if (!token) return null
+function currentUser(body) {
+  if (!body.token) return null
+
   var decoded
   try {
-    decoded = Utilities.newBlob(Utilities.base64DecodeWebSafe(token)).getDataAsString()
-  } catch (e) {
+    decoded = Utilities.newBlob(Utilities.base64DecodeWebSafe(body.token)).getDataAsString()
+  } catch (err) {
     return null
   }
-  var phone = decoded.split('::')[0]
-  return findRow_(SHEET_USERS, 'phone', phone)
+
+  return findRecord('users', 'phone', decoded.split('::')[0])
 }
 
-// ============================================================================
-//  1) التحقق من الرقم (Whitelist)
-// ============================================================================
+function requireUser(body) {
+  var user = currentUser(body)
+  if (!user) return { error: 'لازم تسجّل دخول الأول', code: 'UNAUTHORIZED' }
+  return { user: user }
+}
 
-function checkPhone_(rawPhone) {
-  var phone = normalizePhone_(rawPhone)
-  if (!phone) {
-    return { valid: false, allowed: false, reason: 'رقم غير صحيح' }
-  }
+function requireAdmin(body) {
+  var user = currentUser(body)
+  if (!user) return { error: 'لازم تسجّل دخول الأول', code: 'UNAUTHORIZED' }
+  if (String(user.role) !== 'admin') return { error: 'الصفحة دي للأدمن بس', code: 'FORBIDDEN' }
+  return { user: user }
+}
 
-  var wl = findRow_(SHEET_WHITELIST, 'phone', phone)
-  var used = findRow_(SHEET_USERS, 'phone', phone)
+function denied(check) {
+  return { ok: false, error: check.error, code: check.code }
+}
+
+function checkPhone(rawPhone) {
+  var phone = cleanPhone(rawPhone)
+  if (!phone) return { valid: false, allowed: false, reason: 'رقم غير صحيح' }
+
+  var entry = findRecord('whitelist', 'phone', phone)
+  var existing = findRecord('users', 'phone', phone)
 
   return {
     valid: true,
     phone: phone,
-    allowed: !!(wl && String(wl.isActive) === '1'),
-    taken: !!used,
-    username: used ? String(used.username) : null,
+    allowed: !!(entry && String(entry.isActive) === '1'),
+    taken: !!existing,
+    username: existing ? String(existing.username) : null,
+    telegram: TELEGRAM_URL,
   }
 }
 
-// ============================================================================
-//  2) التسجيل
-// ============================================================================
-
-function register_(body) {
-  var phone = normalizePhone_(body.phone)
+function register(body) {
+  var phone = cleanPhone(body.phone)
   if (!phone) {
     return { ok: false, error: 'اكتب رقم موبايل صحيح — مثال: 01012345678', code: 'BAD_PHONE' }
   }
 
-  // لازم الرقم يكون في القائمة المسموح لها
-  var wl = findRow_(SHEET_WHITELIST, 'phone', phone)
-  if (!wl || String(wl.isActive) !== '1') {
+  var entry = findRecord('whitelist', 'phone', phone)
+  if (!entry || String(entry.isActive) !== '1') {
     return {
       ok: false,
-      error: 'الرقم ده مش مسموح له بالدخول. كلّم الأدمن يضيفه في قائمة الأرقام المسموحة.',
+      error: 'الرقم ده مش مسموح له بالدخول. ابعت للأدمن على تليجرام يضيفه الأول.',
       code: 'NOT_WHITELISTED',
+      telegram: TELEGRAM_URL,
     }
   }
 
-  // لازم الرقم مايكونش متسجّل قبل كده
-  if (findRow_(SHEET_USERS, 'phone', phone)) {
+  if (findRecord('users', 'phone', phone)) {
     return { ok: false, error: 'الرقم ده متسجّل بالفعل — جرّب تسجيل الدخول.', code: 'PHONE_TAKEN' }
   }
 
-  // التحقق من اسم المستخدم
   var username = String(body.username || '').trim()
   if (username.length < 3) {
     return { ok: false, error: 'اسم المستخدم لازم ٣ حروف على الأقل', code: 'BAD_USERNAME' }
@@ -390,11 +288,10 @@ function register_(body) {
   if (!/^[\u0600-\u06FFa-zA-Z0-9_.\- ]+$/.test(username)) {
     return { ok: false, error: 'اسم المستخدم يقبل حروف وأرقام و _ و . و - بس', code: 'BAD_USERNAME' }
   }
-  if (findRow_(SHEET_USERS, 'username', username)) {
+  if (findRecord('users', 'username', username)) {
     return { ok: false, error: 'اسم المستخدم ده محجوز، اختار غيره.', code: 'USERNAME_TAKEN' }
   }
 
-  // التحقق من الباسورد
   var password = String(body.password || '')
   if (password.length < 6) {
     return { ok: false, error: 'الباسورد لازم ٦ حروف/أرقام على الأقل', code: 'BAD_PASSWORD' }
@@ -404,162 +301,131 @@ function register_(body) {
   }
 
   var now = new Date().toISOString()
-  sheet_(SHEET_USERS).appendRow([
-    phone,
-    username,
-    hash_(password),
-    0, // score
-    'student', // role
-    now, // createdAt
-    now, // lastLogin
-  ])
+  openSheet('users').appendRow([phone, username, hashPassword(password), 0, 'student', now, now])
 
-  var user = findRow_(SHEET_USERS, 'phone', phone)
   return {
     ok: true,
-    token: makeToken_(phone),
-    user: publicUser_(user),
+    token: issueToken(phone),
+    user: toPublicUser(findRecord('users', 'phone', phone)),
     message: 'أهلاً بيك! حسابك اتفعّل.',
   }
 }
 
-// ============================================================================
-//  الدخول
-// ============================================================================
-
-function login_(body) {
-  var phone = normalizePhone_(body.phone)
+function login(body) {
+  var phone = cleanPhone(body.phone)
   var password = String(body.password || '')
 
   if (!phone || !password) {
     return { ok: false, error: 'اكتب الرقم والباسورد', code: 'MISSING' }
   }
 
-  var user = findRow_(SHEET_USERS, 'phone', phone)
-  if (!user || String(user.passHash) !== hash_(password)) {
+  var user = findRecord('users', 'phone', phone)
+  if (!user || String(user.passHash) !== hashPassword(password)) {
     return { ok: false, error: 'الرقم أو الباسورد غلط', code: 'BAD_CREDENTIALS' }
   }
 
-  // حدّث آخر دخول
   var now = new Date().toISOString()
-  sheet_(SHEET_USERS).getRange(user._row, HEADERS.users.indexOf('lastLogin') + 1).setValue(now)
+  openSheet('users').getRange(user.rowNumber, columnOf('users', 'lastLogin')).setValue(now)
   user.lastLogin = now
 
-  return { ok: true, token: makeToken_(phone), user: publicUser_(user) }
+  return { ok: true, token: issueToken(phone), user: toPublicUser(user) }
 }
 
-// ============================================================================
-//  بياناتي أنا
-// ============================================================================
+function me(body) {
+  var check = requireUser(body)
+  if (check.error) return denied(check)
 
-function me_(body) {
-  var user = userFromToken_(body.token)
-  if (!user) return { ok: false, error: 'لازم تسجّل دخول الأول', code: 'UNAUTHORIZED' }
-
-  var prog = rows_(SHEET_PROGRESS).filter(function (r) {
-    return String(r.phone) === String(user.phone)
-  })
-
-  var lessons = prog.filter(function (r) {
-    return String(r.lessonId)
-  })
-
-  var completed = []
+  var user = check.user
   var seen = {}
-  for (var i = 0; i < lessons.length; i++) {
-    var lid = String(lessons[i].lessonId)
-    if (seen[lid]) continue
-    seen[lid] = true
-    completed.push({ lesson_id: lid, completed_at: String(lessons[i].completedAt) })
+  var completed = []
+
+  var own = readSheet('progress').filter(function (entry) {
+    return String(entry.phone) === String(user.phone) && String(entry.lessonId)
+  })
+
+  for (var i = 0; i < own.length; i++) {
+    var lessonId = String(own[i].lessonId)
+    if (seen[lessonId]) continue
+
+    seen[lessonId] = true
+    completed.push({ lesson_id: lessonId, completed_at: String(own[i].completedAt) })
   }
 
   return {
     ok: true,
-    user: publicUser_(user),
-    progress: completed.map(function (c) {
-      return c.lesson_id
+    user: toPublicUser(user),
+    progress: completed.map(function (item) {
+      return item.lesson_id
     }),
     completed: completed,
-    stats: {
-      lessonsDone: completed.length,
-      totalPoints: Number(user.score) || 0,
-    },
+    stats: { lessonsDone: completed.length, totalPoints: Number(user.score) || 0 },
   }
 }
 
-// ============================================================================
-//  3) تحديث النقاط
-// ============================================================================
-
-function updateScore_(body) {
-  var user = userFromToken_(body.token)
-  if (!user) return { ok: false, error: 'لازم تسجّل دخول الأول', code: 'UNAUTHORIZED' }
-
-  var newScore = Math.max(0, parseInt(body.score, 10) || 0)
-  sheet_(SHEET_USERS)
-    .getRange(user._row, HEADERS.users.indexOf('score') + 1)
-    .setValue(newScore)
-
-  return { ok: true, user: publicUser_({ phone: user.phone, username: user.username, role: user.role, score: newScore, createdAt: user.createdAt, lastLogin: user.lastLogin }) }
+function writeScore(user, score) {
+  openSheet('users').getRange(user.rowNumber, columnOf('users', 'score')).setValue(score)
 }
 
-/** زوّد نقاط على المستخدم (داخلي) */
-function addPoints_(phone, points) {
-  var user = findRow_(SHEET_USERS, 'phone', phone)
+function addPoints(phone, points) {
+  var user = findRecord('users', 'phone', phone)
   if (!user) return 0
+
   var score = Math.max(0, (Number(user.score) || 0) + points)
-  sheet_(SHEET_USERS).getRange(user._row, HEADERS.users.indexOf('score') + 1).setValue(score)
+  writeScore(user, score)
   return score
 }
 
-// ============================================================================
-//  إكمال درس
-// ============================================================================
+function updateScore(body) {
+  var check = requireUser(body)
+  if (check.error) return denied(check)
 
-function completeLesson_(body) {
-  var user = userFromToken_(body.token)
-  if (!user) return { ok: false, error: 'لازم تسجّل دخول الأول', code: 'UNAUTHORIZED' }
+  var score = Math.max(0, parseInt(body.score, 10) || 0)
+  writeScore(check.user, score)
 
+  return { ok: true, user: toPublicUser(Object.assign({}, check.user, { score: score })) }
+}
+
+function completeLesson(body) {
+  var check = requireUser(body)
+  if (check.error) return denied(check)
+
+  var user = check.user
   var lessonId = String(body.lessonId || '').trim()
   if (!lessonId) return { ok: false, error: 'معرف الدرس مطلوب' }
 
-  // لو خلّصه قبل كده، مانعملش حاجة
-  var already = rows_(SHEET_PROGRESS).filter(function (r) {
-    return String(r.phone) === String(user.phone) && String(r.lessonId) === lessonId
+  var own = readSheet('progress').filter(function (entry) {
+    return String(entry.phone) === String(user.phone)
   })
-  if (already.length) {
+
+  var done = own.some(function (entry) {
+    return String(entry.lessonId) === lessonId
+  })
+
+  if (done) {
     return { ok: true, already: true, added: 0, score: Number(user.score) || 0 }
   }
 
-  // أول درس؟ خد بونص
-  var doneCount = rows_(SHEET_PROGRESS).filter(function (r) {
-    return String(r.phone) === String(user.phone)
-  }).length
+  var earned = POINTS.lessonDone
+  if (own.length === 0) earned += POINTS.firstLesson
 
-  var added = POINTS.LESSON_DONE
-  if (doneCount === 0) added += POINTS.FIRST_BLOOD
-
-  sheet_(SHEET_PROGRESS).appendRow([
+  openSheet('progress').appendRow([
     String(user.phone),
     lessonId,
     new Date().toISOString(),
-    '', // quizCorrect
-    '', // quizTotal
-    added,
+    '',
+    '',
+    earned,
   ])
 
-  var score = addPoints_(user.phone, added)
-  return { ok: true, added: added, score: score, rank: rankFor_(score) }
+  var score = addPoints(user.phone, earned)
+  return { ok: true, added: earned, score: score, rank: rankOf(score) }
 }
 
-// ============================================================================
-//  نتيجة الاختبار
-// ============================================================================
+function submitQuiz(body) {
+  var check = requireUser(body)
+  if (check.error) return denied(check)
 
-function quiz_(body) {
-  var user = userFromToken_(body.token)
-  if (!user) return { ok: false, error: 'لازم تسجّل دخول الأول', code: 'UNAUTHORIZED' }
-
+  var user = check.user
   var lessonId = String(body.lessonId || '').trim()
   var correct = parseInt(body.correct, 10)
   var total = parseInt(body.total, 10)
@@ -567,52 +433,42 @@ function quiz_(body) {
   if (!lessonId || isNaN(correct) || isNaN(total) || total < 1) {
     return { ok: false, error: 'بيانات الاختبار ناقصة' }
   }
-  if (correct < 0) correct = 0
-  if (correct > total) correct = total
 
-  var points = correct * POINTS.PER_CORRECT
+  correct = Math.min(Math.max(correct, 0), total)
+
   var perfect = correct === total
-  if (perfect) points += POINTS.PERFECT_BONUS
+  var earned = correct * POINTS.perCorrect + (perfect ? POINTS.perfectBonus : 0)
 
-  sheet_(SHEET_PROGRESS).appendRow([
+  openSheet('progress').appendRow([
     String(user.phone),
     lessonId,
     new Date().toISOString(),
     correct,
     total,
-    points,
+    earned,
   ])
 
-  var score = addPoints_(user.phone, points)
-  return { ok: true, added: points, perfect: perfect, score: score, rank: rankFor_(score) }
+  var score = addPoints(user.phone, earned)
+  return { ok: true, added: earned, perfect: perfect, score: score, rank: rankOf(score) }
 }
 
-function getProgress_(body) {
-  var user = userFromToken_(body.token)
-  if (!user) return { ok: false, error: 'لازم تسجّل دخول الأول', code: 'UNAUTHORIZED' }
+function getProgress(body) {
+  var check = requireUser(body)
+  if (check.error) return denied(check)
 
-  var rows = rows_(SHEET_PROGRESS).filter(function (r) {
-    return String(r.phone) === String(user.phone)
-  })
+  var user = check.user
+  var lessons = readSheet('progress')
+    .filter(function (entry) {
+      return String(entry.phone) === String(user.phone)
+    })
+    .map(function (entry) {
+      return String(entry.lessonId)
+    })
 
-  return {
-    ok: true,
-    progress: rows.map(function (r) {
-      return String(r.lessonId)
-    }),
-    score: Number(user.score) || 0,
-  }
+  return { ok: true, progress: lessons, score: Number(user.score) || 0 }
 }
 
-// ============================================================================
-//  3) التعليقات والتقييمات بالنجوم  ⭐ الجديد
-// ============================================================================
-
-/**
- * إضافة تعليق + تقييم لدرس معيّن
- * body: { token, lessonId, rating (1-5), comment }
- */
-function addComment_(body) {
+function addComment(body) {
   var lessonId = String(body.lessonId || '').trim()
   if (!lessonId) return { ok: false, error: 'معرّف الدرس مطلوب' }
 
@@ -626,12 +482,11 @@ function addComment_(body) {
     return { ok: false, error: 'التعليق طويل أوي (الحد ١٠ حرف)' }
   }
 
-  // صاحب التعليق: إما مستخدم مسجّل دخول، أو زائر (اسم اختياري)
-  var user = userFromToken_(body.token)
+  var user = currentUser(body)
   var phone = user ? String(user.phone) : 'guest'
   var username = user ? String(user.username) : String(body.guestName || 'زائر').substring(0, 24)
 
-  sheet_(SHEET_COMMENTS).appendRow([
+  openSheet('comments').appendRow([
     new Date().toISOString(),
     phone,
     username,
@@ -640,128 +495,116 @@ function addComment_(body) {
     comment,
   ])
 
-  var summary = ratingSummary_(lessonId)
-  return { ok: true, message: 'تم إضافة تعليقك، شكرًا ليك!', summary: summary }
+  return {
+    ok: true,
+    message: 'تم إضافة تعليقك، شكرًا ليك!',
+    summary: ratingSummary(lessonId),
+  }
 }
 
-/**
- * قراءة تعليقات درس + ملخص التقييم
- * لو lessonId فاضي، بيرجّع كل التعليقات
- */
-function getComments_(lessonId) {
-  var all = rows_(SHEET_COMMENTS)
+function listComments(lessonId) {
+  var all = readSheet('comments')
 
-  var filtered = all
-  if (lessonId) {
-    filtered = all.filter(function (r) {
-      return String(r.lessonId) === String(lessonId)
-    })
-  }
+  var selected = lessonId
+    ? all.filter(function (entry) {
+        return String(entry.lessonId) === String(lessonId)
+      })
+    : all
 
-  // الأحدث الأول
-  filtered.sort(function (a, b) {
+  selected.sort(function (a, b) {
     return String(b.timestamp).localeCompare(String(a.timestamp))
   })
 
-  var items = filtered.map(function (r) {
+  var items = selected.map(function (entry) {
     return {
-      timestamp: String(r.timestamp),
-      username: String(r.username),
-      lessonId: String(r.lessonId),
-      rating: Number(r.rating) || 0,
-      comment: String(r.comment),
+      timestamp: String(entry.timestamp),
+      username: String(entry.username),
+      lessonId: String(entry.lessonId),
+      rating: Number(entry.rating) || 0,
+      comment: String(entry.comment),
     }
   })
 
-  return { ok: true, count: items.length, items: items, summary: ratingSummary_(lessonId) }
+  return { ok: true, count: items.length, items: items, summary: ratingSummary(lessonId) }
 }
 
-/** ملخص التقييم: المتوسط + عدد التقييمات */
-function ratingSummary_(lessonId) {
-  var all = rows_(SHEET_COMMENTS)
-  var filtered = all
-  if (lessonId) {
-    filtered = all.filter(function (r) {
-      return String(r.lessonId) === String(lessonId)
-    })
-  }
+function ratingSummary(lessonId) {
+  var all = readSheet('comments')
 
-  var sum = 0
-  var n = 0
-  for (var i = 0; i < filtered.length; i++) {
-    var r = Number(filtered[i].rating) || 0
-    if (r >= 1 && r <= 5) {
-      sum += r
-      n++
+  var selected = lessonId
+    ? all.filter(function (entry) {
+        return String(entry.lessonId) === String(lessonId)
+      })
+    : all
+
+  var total = 0
+  var count = 0
+
+  for (var i = 0; i < selected.length; i++) {
+    var rating = Number(selected[i].rating) || 0
+    if (rating >= 1 && rating <= 5) {
+      total += rating
+      count++
     }
   }
 
   return {
-    count: n,
-    average: n ? Math.round((sum / n) * 10) / 10 : 0,
-    averagePercent: n ? Math.round((sum / n / 5) * 100) : 0,
+    count: count,
+    average: count ? Math.round((total / count) * 10) / 10 : 0,
+    averagePercent: count ? Math.round((total / count / 5) * 100) : 0,
   }
 }
 
-// ============================================================================
-//  لوحة الأدمن
-// ============================================================================
+function adminOverview(body) {
+  var check = requireAdmin(body)
+  if (check.error) return denied(check)
 
-function adminOnly_(body) {
-  var user = userFromToken_(body.token)
-  if (!user) return { error: 'لازم تسجّل دخول الأول', code: 'UNAUTHORIZED' }
-  if (String(user.role) !== 'admin') return { error: 'الصفحة دي للأدمن بس', code: 'FORBIDDEN' }
-  return { user: user }
-}
+  var users = readSheet('users')
+  var progress = readSheet('progress')
 
-function adminOverview_(body) {
-  var auth = adminOnly_(body)
-  if (auth.error) return { ok: false, error: auth.error, code: auth.code }
-
-  var users = rows_(SHEET_USERS)
-  var wl = rows_(SHEET_WHITELIST)
-  var prog = rows_(SHEET_PROGRESS)
-
-  var students = users.filter(function (u) {
-    return String(u.role) === 'student'
+  var students = users.filter(function (user) {
+    return String(user.role) === 'student'
   })
 
-  var activeWl = wl.filter(function (w) {
-    return String(w.isActive) === '1'
+  var active = readSheet('whitelist').filter(function (entry) {
+    return String(entry.isActive) === '1'
   })
 
-  var pending = activeWl.filter(function (w) {
-    return !users.some(function (u) {
-      return String(u.phone) === String(w.phone)
+  var pending = active.filter(function (entry) {
+    return !users.some(function (user) {
+      return String(user.phone) === String(entry.phone)
     })
   })
 
-  // أعلى ٥ طلاب
   var top = students
     .slice()
     .sort(function (a, b) {
       return (Number(b.score) || 0) - (Number(a.score) || 0)
     })
     .slice(0, 5)
-    .map(function (u) {
-      return { username: String(u.username), phone: String(u.phone), score: Number(u.score) || 0 }
+    .map(function (user) {
+      return {
+        username: String(user.username),
+        phone: String(user.phone),
+        score: Number(user.score) || 0,
+      }
     })
 
-  // آخر ٨ إنجازات
-  var recent = prog
+  var recent = progress
     .slice()
     .sort(function (a, b) {
       return String(b.completedAt).localeCompare(String(a.completedAt))
     })
     .slice(0, 8)
-    .map(function (r) {
-      var u = users.filter(function (x) {
-        return String(x.phone) === String(r.phone)
+    .map(function (entry) {
+      var owner = users.filter(function (user) {
+        return String(user.phone) === String(entry.phone)
       })[0]
+
       return {
-        username: u ? String(u.username) : String(r.phone),
-        lesson_id: String(r.lessonId),
-        completed_at: String(r.completedAt),
+        username: owner ? String(owner.username) : String(entry.phone),
+        lesson_id: String(entry.lessonId),
+        completed_at: String(entry.completedAt),
       }
     })
 
@@ -769,74 +612,75 @@ function adminOverview_(body) {
     ok: true,
     users: students.length,
     admins: users.length - students.length,
-    whitelisted: activeWl.length,
+    whitelisted: active.length,
     pending: pending.length,
-    completions: prog.length,
-    attempts: prog.filter(function (r) {
-      return String(r.quizTotal) !== ''
+    completions: progress.length,
+    attempts: progress.filter(function (entry) {
+      return String(entry.quizTotal) !== ''
     }).length,
-    comments: rows_(SHEET_COMMENTS).length,
+    comments: readSheet('comments').length,
     top: top,
     recent: recent,
   }
 }
 
-function getWhitelist_(body) {
-  var auth = adminOnly_(body)
-  if (auth.error) return { ok: false, error: auth.error, code: auth.code }
+function getWhitelist(body) {
+  var check = requireAdmin(body)
+  if (check.error) return denied(check)
 
-  var users = rows_(SHEET_USERS)
-  var items = rows_(SHEET_WHITELIST).map(function (w) {
-    var u = users.filter(function (x) {
-      return String(x.phone) === String(w.phone)
+  var users = readSheet('users')
+
+  var items = readSheet('whitelist').map(function (entry) {
+    var owner = users.filter(function (user) {
+      return String(user.phone) === String(entry.phone)
     })[0]
+
     return {
-      phone: String(w.phone),
-      label: String(w.label || ''),
-      is_active: String(w.isActive) === '1' ? 1 : 0,
-      added_by: String(w.addedBy || ''),
-      created_at: String(w.createdAt || ''),
-      username: u ? String(u.username) : null,
-      score: u ? Number(u.score) || 0 : null,
+      phone: String(entry.phone),
+      label: String(entry.label || ''),
+      is_active: String(entry.isActive) === '1' ? 1 : 0,
+      added_by: String(entry.addedBy || ''),
+      created_at: String(entry.createdAt || ''),
+      username: owner ? String(owner.username) : null,
+      score: owner ? Number(owner.score) || 0 : null,
     }
   })
 
   return { ok: true, count: items.length, items: items }
 }
 
-function addToWhitelist_(body) {
-  var auth = adminOnly_(body)
-  if (auth.error) return { ok: false, error: auth.error, code: auth.code }
+function addToWhitelist(body) {
+  var check = requireAdmin(body)
+  if (check.error) return denied(check)
 
-  var raw = String(body.phones || body.phone || '')
-  var list = raw
+  var list = String(body.phones || body.phone || '')
     .split(/[\n,،;]+/)
-    .map(function (p) {
-      return p.trim()
+    .map(function (entry) {
+      return entry.trim()
     })
-    .filter(function (p) {
-      return p
+    .filter(function (entry) {
+      return entry
     })
 
   if (!list.length) return { ok: false, error: 'اكتب رقم واحد على الأقل' }
 
-  var sh = sheet_(SHEET_WHITELIST)
+  var sheet = openSheet('whitelist')
   var added = []
   var invalid = []
   var now = new Date().toISOString()
 
   for (var i = 0; i < list.length; i++) {
-    var phone = normalizePhone_(list[i])
+    var phone = cleanPhone(list[i])
     if (!phone) {
       invalid.push(list[i])
       continue
     }
 
-    var existing = findRow_(SHEET_WHITELIST, 'phone', phone)
+    var existing = findRecord('whitelist', 'phone', phone)
     if (existing) {
-      sh.getRange(existing._row, HEADERS.whitelist.indexOf('isActive') + 1).setValue(1)
+      sheet.getRange(existing.rowNumber, columnOf('whitelist', 'isActive')).setValue(1)
     } else {
-      sh.appendRow([phone, String(body.label || ''), 1, String(auth.user.username), now])
+      sheet.appendRow([phone, String(body.label || ''), 1, String(check.user.username), now])
     }
     added.push(phone)
   }
@@ -844,63 +688,66 @@ function addToWhitelist_(body) {
   return { ok: true, added: added, invalid: invalid, count: added.length }
 }
 
-function toggleWhitelist_(body) {
-  var auth = adminOnly_(body)
-  if (auth.error) return { ok: false, error: auth.error, code: auth.code }
+function toggleWhitelist(body) {
+  var check = requireAdmin(body)
+  if (check.error) return denied(check)
 
-  var phone = normalizePhone_(body.phone)
+  var phone = cleanPhone(body.phone)
   if (!phone) return { ok: false, error: 'رقم غير صحيح' }
 
-  var row = findRow_(SHEET_WHITELIST, 'phone', phone)
-  if (!row) return { ok: false, error: 'الرقم ده مش موجود في القائمة' }
+  var entry = findRecord('whitelist', 'phone', phone)
+  if (!entry) return { ok: false, error: 'الرقم ده مش موجود في القائمة' }
 
-  var newVal = body.is_active ? 1 : 0
-  sheet_(SHEET_WHITELIST)
-    .getRange(row._row, HEADERS.whitelist.indexOf('isActive') + 1)
-    .setValue(newVal)
+  var isActive = body.is_active ? 1 : 0
+  openSheet('whitelist')
+    .getRange(entry.rowNumber, columnOf('whitelist', 'isActive'))
+    .setValue(isActive)
 
-  return { ok: true, phone: phone, is_active: newVal }
+  return { ok: true, phone: phone, is_active: isActive }
 }
 
-function deleteWhitelist_(body) {
-  var auth = adminOnly_(body)
-  if (auth.error) return { ok: false, error: auth.error, code: auth.code }
+function deleteWhitelist(body) {
+  var check = requireAdmin(body)
+  if (check.error) return denied(check)
 
-  var phone = normalizePhone_(body.phone)
+  var phone = cleanPhone(body.phone)
   if (!phone) return { ok: false, error: 'رقم غير صحيح' }
 
-  var row = findRow_(SHEET_WHITELIST, 'phone', phone)
-  if (!row) return { ok: true, phone: phone }
+  var entry = findRecord('whitelist', 'phone', phone)
+  if (!entry) return { ok: true, phone: phone }
 
-  sheet_(SHEET_WHITELIST).deleteRow(row._row)
+  openSheet('whitelist').deleteRow(entry.rowNumber)
   return { ok: true, phone: phone }
 }
 
-function getUsers_(body) {
-  var auth = adminOnly_(body)
-  if (auth.error) return { ok: false, error: auth.error, code: auth.code }
+function getUsers(body) {
+  var check = requireAdmin(body)
+  if (check.error) return denied(check)
 
-  var prog = rows_(SHEET_PROGRESS)
-  var items = rows_(SHEET_USERS).map(function (u) {
-    var mine = prog.filter(function (p) {
-      return String(p.phone) === String(u.phone)
+  var progress = readSheet('progress')
+
+  var items = readSheet('users').map(function (user) {
+    var own = progress.filter(function (entry) {
+      return String(entry.phone) === String(user.phone)
     })
-    var score = Number(u.score) || 0
+
+    var score = Number(user.score) || 0
+
     return {
-      id: u._row,
-      username: String(u.username),
-      phone: prettyPhone_(String(u.phone)),
-      role: String(u.role || 'student'),
+      id: user.rowNumber,
+      username: String(user.username),
+      phone: displayPhone(String(user.phone)),
+      role: String(user.role || 'student'),
       score: score,
-      rank: rankFor_(score).name,
-      lessonsDone: mine.filter(function (p) {
-        return String(p.quizTotal) === ''
+      rank: rankOf(score).name,
+      lessonsDone: own.filter(function (entry) {
+        return String(entry.quizTotal) === ''
       }).length,
-      attempts: mine.filter(function (p) {
-        return String(p.quizTotal) !== ''
+      attempts: own.filter(function (entry) {
+        return String(entry.quizTotal) !== ''
       }).length,
-      createdAt: String(u.createdAt || ''),
-      lastLogin: String(u.lastLogin || ''),
+      createdAt: String(user.createdAt || ''),
+      lastLogin: String(user.lastLogin || ''),
     }
   })
 
@@ -911,102 +758,99 @@ function getUsers_(body) {
   return { ok: true, count: items.length, items: items }
 }
 
-function updateUser_(body) {
-  var auth = adminOnly_(body)
-  if (auth.error) return { ok: false, error: auth.error, code: auth.code }
+function updateUser(body) {
+  var check = requireAdmin(body)
+  if (check.error) return denied(check)
 
-  var rowNum = parseInt(body.id, 10)
-  if (!rowNum || rowNum < 2) return { ok: false, error: 'مستخدم غير صحيح' }
+  var rowNumber = parseInt(body.id, 10)
+  if (!rowNumber || rowNumber < 2) return { ok: false, error: 'مستخدم غير صحيح' }
 
-  var sh = sheet_(SHEET_USERS)
-  var user = rows_(SHEET_USERS).filter(function (u) {
-    return u._row === rowNum
+  var target = readSheet('users').filter(function (user) {
+    return user.rowNumber === rowNumber
   })[0]
-  if (!user) return { ok: false, error: 'المستخدم مش موجود' }
 
-  // النقاط
+  if (!target) return { ok: false, error: 'المستخدم مش موجود' }
+
+  var sheet = openSheet('users')
+
   if (body.score !== undefined && body.score !== null && body.score !== '') {
-    sh.getRange(rowNum, HEADERS.users.indexOf('score') + 1).setValue(
-      Math.max(0, parseInt(body.score, 10) || 0)
-    )
+    sheet
+      .getRange(rowNumber, columnOf('users', 'score'))
+      .setValue(Math.max(0, parseInt(body.score, 10) || 0))
   }
 
-  // الدور
   if (body.role === 'admin' || body.role === 'student') {
-    sh.getRange(rowNum, HEADERS.users.indexOf('role') + 1).setValue(body.role)
+    sheet.getRange(rowNumber, columnOf('users', 'role')).setValue(body.role)
   }
 
-  // الباسورد الجديد
   if (body.newPassword) {
-    var pw = String(body.newPassword)
-    if (pw.length < 6) return { ok: false, error: 'الباسورد لازم ٦ حروف/أرقام على الأقل' }
-    sh.getRange(rowNum, HEADERS.users.indexOf('passHash') + 1).setValue(hash_(pw))
+    var password = String(body.newPassword)
+    if (password.length < 6) {
+      return { ok: false, error: 'الباسورد لازم ٦ حروف/أرقام على الأقل' }
+    }
+    sheet.getRange(rowNumber, columnOf('users', 'passHash')).setValue(hashPassword(password))
   }
 
-  var updated = rows_(SHEET_USERS).filter(function (u) {
-    return u._row === rowNum
+  var updated = readSheet('users').filter(function (user) {
+    return user.rowNumber === rowNumber
   })[0]
 
-  return { ok: true, user: publicUser_(updated) }
+  return { ok: true, user: toPublicUser(updated) }
 }
 
-function deleteUser_(body) {
-  var auth = adminOnly_(body)
-  if (auth.error) return { ok: false, error: auth.error, code: auth.code }
+function deleteUser(body) {
+  var check = requireAdmin(body)
+  if (check.error) return denied(check)
 
-  var rowNum = parseInt(body.id, 10)
-  if (!rowNum || rowNum < 2) return { ok: false, error: 'مستخدم غير صحيح' }
-  if (rowNum === auth.user._row) return { ok: false, error: 'مش هتحذف حسابك انت!' }
+  var rowNumber = parseInt(body.id, 10)
+  if (!rowNumber || rowNumber < 2) return { ok: false, error: 'مستخدم غير صحيح' }
+  if (rowNumber === check.user.rowNumber) return { ok: false, error: 'مش هتحذف حسابك انت!' }
 
-  var user = rows_(SHEET_USERS).filter(function (u) {
-    return u._row === rowNum
+  var target = readSheet('users').filter(function (user) {
+    return user.rowNumber === rowNumber
   })[0]
-  if (!user) return { ok: false, error: 'المستخدم مش موجود' }
 
-  // شيل تقدمه الأول
-  var progSh = sheet_(SHEET_PROGRESS)
-  var mine = rows_(SHEET_PROGRESS).filter(function (p) {
-    return String(p.phone) === String(user.phone)
-  })
-  // امسح من الآخر للأول عشان الأرقام ما تتلخبطش
-  mine
+  if (!target) return { ok: false, error: 'المستخدم مش موجود' }
+
+  var progressSheet = openSheet('progress')
+
+  readSheet('progress')
+    .filter(function (entry) {
+      return String(entry.phone) === String(target.phone)
+    })
     .sort(function (a, b) {
-      return b._row - a._row
+      return b.rowNumber - a.rowNumber
     })
-    .forEach(function (p) {
-      progSh.deleteRow(p._row)
+    .forEach(function (entry) {
+      progressSheet.deleteRow(entry.rowNumber)
     })
 
-  sheet_(SHEET_USERS).deleteRow(rowNum)
-  return { ok: true, id: rowNum }
+  openSheet('users').deleteRow(rowNumber)
+
+  return { ok: true, id: rowNumber }
 }
-
-// ============================================================================
-//  دالة مساعدة — شغّلها مرة واحدة من المحر عشان تجهّز كل الأوراق
-//  (من قائمة الدوال فوق اختار setupSheets واضغط Run)
-// ============================================================================
 
 function setupSheets() {
-  Object.keys(HEADERS).forEach(function (name) {
-    sheet_(name)
+  Object.keys(SHEETS).forEach(function (name) {
+    openSheet(name)
   })
 
-  // أضف حساب الأدمن لو مش موجود
   var adminPhone = '01140971703'
-  if (!findRow_(SHEET_USERS, 'phone', adminPhone)) {
+  if (!findRecord('users', 'phone', adminPhone)) {
     var now = new Date().toISOString()
-    sheet_(SHEET_USERS).appendRow([
+
+    openSheet('users').appendRow([
       adminPhone,
       'タハ A3',
-      hash_('Malak0897@@Taha'),
+      hashPassword('Malak0897@@Taha'),
       9999,
       'admin',
       now,
       now,
     ])
-    // وضيفه للقائمة المسموح لها
-    if (!findRow_(SHEET_WHITELIST, 'phone', adminPhone)) {
-      sheet_(SHEET_WHITELIST).appendRow([adminPhone, 'حساب الأدمن', 1, 'setup', now])
+
+    if (!findRecord('whitelist', 'phone', adminPhone)) {
+      openSheet('whitelist').appendRow([adminPhone, 'حساب الأدمن', 1, 'setup', now])
     }
   }
 

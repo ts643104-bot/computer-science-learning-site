@@ -459,8 +459,11 @@
           </button>
         </form>
 
-        <p style="text-align: center; margin-top: 1rem; font-size: 0.8rem">
-          <a class="text-slate-400 hover:text-slate-200" href="./index.html">→ رجوع لموقع الدروس</a>
+        <p style="text-align: center; margin-top: 1.25rem; font-size: 0.8rem">
+          <a class="text-slate-400 hover:text-slate-200" href="https://t.me/a3Taha" target="_blank"
+            rel="noopener noreferrer">📩 طلب اشتراك جديد</a>
+          <span class="text-slate-600"> · </span>
+          <a class="text-slate-400 hover:text-slate-200" href="./index.html">رجوع للموقع</a>
         </p>
       </div>
     </div>
@@ -641,345 +644,305 @@
         </div>
       </div>
 
-      <div class="ad-foot">
-        © شبكة وعلوم — لوحة تحكم الأدمن
-        <br />
-        <span style="opacity: 0.75">تصميم المهندس طه سلطان / タハ A3</span>
-      </div>
+      <div class="ad-foot">تصميم المهندس طه سلطان / タハ A3</div>
     </div>
   </div>
 
   <script src="./api-client.js"></script>
   <script>
-    // ============================================================
-    // لوحة الأدمن — بتتكلم مع Google Apps Script (مفيش سيرفر)
-    // تصميم المهندس طه سلطان / タハ A3
-    // ============================================================
     const $ = (id) => document.getElementById(id)
 
-    // ---------- تحويل أخطاء الـ API لرسالة واضحة ----------
-    function fail(err) {
-      throw new Error((err && err.message) || 'حصل خطأ غير معروف')
-    }
-
-    // كل النداءات بتمر من هنا — نفس التوقيع القديم عشان أقل تعديل
-    async function api(path, { method = 'GET', body } = {}) {
-      const A = window.Api
-      if (!A) throw new Error('مكتبة الاتصال مش محمّلة')
-
-      // نطابق المسارات القديمة بالعمليات الجديدة
-      switch (path) {
-        case '/auth/login':
-          return A.login(body.phone, body.password)
-        case '/auth/logout':
-          return A.logout()
-        case '/auth/me':
-          return A.me()
-        case '/admin/overview':
-          return A.adminOverview()
-        case '/admin/whitelist':
-          return method === 'POST' ? A.addToWhitelist(body.phones, body.label) : A.getWhitelist()
-        case '/admin/users':
-          return A.getUsers()
-        default:
-          // /admin/whitelist/:phone  و  /admin/users/:id
-          if (path.startsWith('/admin/whitelist/')) {
-            const phone = decodeURIComponent(path.slice('/admin/whitelist/'.length))
-            if (method === 'PATCH') return A.toggleWhitelist(phone, body.is_active)
-            if (method === 'DELETE') return A.deleteWhitelist(phone)
-          }
-          if (path.startsWith('/admin/users/')) {
-            const id = path.slice('/admin/users/'.length)
-            if (method === 'PATCH') return A.updateUser(id, body)
-            if (method === 'DELETE') return A.deleteUser(id)
-          }
-          throw new Error('المسار ده مش معروف: ' + path)
-      }
-    }
-
-    // ---------- رسائل ----------
-    function msg(el, text, type = 'ok') {
-      el.textContent = text
-      el.className = 'ad-msg on ' + (type === 'err' ? 'err' : 'ok')
-      if (text) setTimeout(() => { el.className = 'ad-msg' }, 4000)
-    }
-
-    const esc = (s) =>
-      String(s == null ? '' : s)
+    const escapeHtml = (value) =>
+      String(value ?? '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
 
-    const fmtDate = (iso) => {
+    const formatDate = (iso) => {
       if (!iso) return '—'
-      try {
-        return new Date(iso).toLocaleString('ar-EG', { dateStyle: 'short', timeStyle: 'short' })
-      } catch {
-        return iso
-      }
+      return new Date(iso).toLocaleString('ar-EG', { dateStyle: 'short', timeStyle: 'short' })
     }
 
-    // ---------- عرض/إخفاء الشاشات ----------
-    function showLogin() {
+    const notify = (el, text, kind = 'ok') => {
+      el.textContent = text
+      el.className = `ad-msg on ${kind === 'err' ? 'err' : 'ok'}`
+      if (text) setTimeout(() => (el.className = 'ad-msg'), 4000)
+    }
+
+    const showLogin = () => {
       $('loginView').classList.remove('ad-hidden')
       $('panelView').classList.add('ad-hidden')
     }
-    function showPanel() {
+
+    const showPanel = () => {
       $('loginView').classList.add('ad-hidden')
       $('panelView').classList.remove('ad-hidden')
     }
 
-    // ---------- تسجيل الدخول ----------
-    $('loginForm').addEventListener('submit', async (e) => {
-      e.preventDefault()
-      const btn = $('loginBtn')
-      btn.disabled = true
-      btn.textContent = 'جاري الدخول…'
+    const showIdentity = (user) => {
+      const phone = user.phonePretty || user.phone || ''
+      $('whoAmI').textContent = `${user.username || 'أدمن'} — ${phone}`
+    }
+
+    $('loginForm').addEventListener('submit', async (event) => {
+      event.preventDefault()
+
+      const button = $('loginBtn')
+      button.disabled = true
+      button.textContent = 'جاري الدخول…'
+
       try {
-        const phone = $('phone').value.trim()
-        const password = $('password').value
-        const data = await api('/auth/login', { method: 'POST', body: { phone, password } })
+        const data = await window.Api.login($('phone').value.trim(), $('password').value)
+
         if (!data.user || data.user.role !== 'admin') {
           throw new Error('الحساب ده مش حساب أدمن')
         }
+
         $('password').value = ''
         showPanel()
-        renderWho(data.user)
-        loadAll()
+        showIdentity(data.user)
+        loadDashboard()
       } catch (err) {
-        msg($('loginMsg'), err.message, 'err')
+        notify($('loginMsg'), err.message, 'err')
       } finally {
-        btn.disabled = false
-        btn.textContent = 'دخول للوحة التحكم'
+        button.disabled = false
+        button.textContent = 'دخول للوحة التحكم'
       }
     })
 
-    // ---------- تسجيل الخروج ----------
-    $('logoutBtn').addEventListener('click', async () => {
-      try {
-        await api('/auth/logout', { method: 'POST' })
-      } catch { }
+    $('logoutBtn').addEventListener('click', () => {
+      window.Api.logout()
       showLogin()
-      msg($('loginMsg'), 'تم تسجيل الخروج', 'ok')
+      notify($('loginMsg'), 'تم تسجيل الخروج', 'ok')
     })
 
-    function renderWho(user) {
-      $('whoAmI').textContent = (user.username || 'أدمن') + ' — ' + (user.phonePretty || user.phone || '')
-    }
-
-    // ---------- التبويبات ----------
     document.querySelectorAll('.ad-tab').forEach((tab) => {
       tab.addEventListener('click', () => {
-        document.querySelectorAll('.ad-tab').forEach((t) => t.classList.remove('on'))
-        document.querySelectorAll('.ad-panel').forEach((p) => p.classList.remove('on'))
+        document.querySelectorAll('.ad-tab').forEach((item) => item.classList.remove('on'))
+        document.querySelectorAll('.ad-panel').forEach((panel) => panel.classList.remove('on'))
         tab.classList.add('on')
-        $('tab-' + tab.dataset.tab).classList.add('on')
+        $(`tab-${tab.dataset.tab}`).classList.add('on')
       })
     })
 
-    // ---------- تحميل كل البيانات ----------
-    async function loadAll() {
+    const loadDashboard = async () => {
       try {
-        const [ov, wl, us] = await Promise.all([
-          api('/admin/overview'),
-          api('/admin/whitelist'),
-          api('/admin/users'),
+        const [overview, whitelist, users] = await Promise.all([
+          window.Api.adminOverview(),
+          window.Api.getWhitelist(),
+          window.Api.getUsers(),
         ])
-        renderOverview(ov)
-        renderWhitelist(wl.items || [])
-        renderUsers(us.items || [])
+
+        renderOverview(overview)
+        renderWhitelist(whitelist.items || [])
+        renderUsers(users.items || [])
       } catch (err) {
-        if (String(err.message).includes('لازم تسجّل') || String(err.message).includes('الأدمن')) {
-          setToken('')
+        if (err.code === 'UNAUTHORIZED' || err.code === 'FORBIDDEN') {
+          window.Api.logout()
           showLogin()
-          msg($('loginMsg'), 'انتهت الجلسة، سجّل دخول تاني', 'err')
-        } else {
-          msg($('panelMsg'), err.message, 'err')
+          notify($('loginMsg'), 'انتهت الجلسة، سجّل دخول تاني', 'err')
+          return
         }
+        notify($('panelMsg'), err.message, 'err')
       }
     }
 
-    // ---------- نظرة عامة ----------
-    function renderOverview(o) {
-      $('stStudents').textContent = o.users ?? 0
-      $('stAdmins').textContent = o.admins ?? 0
-      $('stWhitelist').textContent = o.whitelisted ?? 0
-      $('stPending').textContent = o.pending ?? 0
-      $('stCompletions').textContent = o.completions ?? 0
-      $('stAttempts').textContent = o.attempts ?? 0
+    const renderOverview = (data) => {
+      $('stStudents').textContent = data.users ?? 0
+      $('stAdmins').textContent = data.admins ?? 0
+      $('stWhitelist').textContent = data.whitelisted ?? 0
+      $('stPending').textContent = data.pending ?? 0
+      $('stCompletions').textContent = data.completions ?? 0
+      $('stAttempts').textContent = data.attempts ?? 0
 
-      const top = o.top || []
-      $('topBody').innerHTML = top.length
-        ? top
-          .map(
-            (r, i) =>
-              '<tr><td class="ad-mono">' + (i + 1) + '</td><td>' + esc(r.username) +
-              '</td><td class="ad-mono" style="color:#86efac">' + r.score + '</td></tr>'
-          )
-          .join('')
+      const leaders = data.top || []
+      $('topBody').innerHTML = leaders.length
+        ? leaders
+            .map(
+              (row, index) =>
+                `<tr><td class="ad-mono">${index + 1}</td><td>${escapeHtml(row.username)}</td>` +
+                `<td class="ad-mono" style="color:#86efac">${row.score}</td></tr>`
+            )
+            .join('')
         : '<tr><td colspan="3" class="ad-empty">لا يوجد طلاب لسه</td></tr>'
 
-      const rec = o.recent || []
-      $('recentBody').innerHTML = rec.length
-        ? rec
-          .map(
-            (r) =>
-              '<tr><td>' + esc(r.username) + '</td><td class="ad-mono" style="direction:ltr">' +
-              esc(r.lesson_id) + '</td><td style="white-space:nowrap">' + fmtDate(r.completed_at) + '</td></tr>'
-          )
-          .join('')
+      const recent = data.recent || []
+      $('recentBody').innerHTML = recent.length
+        ? recent
+            .map(
+              (row) =>
+                `<tr><td>${escapeHtml(row.username)}</td>` +
+                `<td class="ad-mono" style="direction:ltr">${escapeHtml(row.lesson_id)}</td>` +
+                `<td style="white-space:nowrap">${formatDate(row.completed_at)}</td></tr>`
+            )
+            .join('')
         : '<tr><td colspan="3" class="ad-empty">لا يوجد نشاط لسه</td></tr>'
     }
 
-    // ---------- الأرقام المسموحة ----------
-    function renderWhitelist(items) {
+    const renderWhitelist = (items) => {
       $('wlCount').textContent = items.length
+
       $('wlBody').innerHTML = items.length
         ? items
-          .map((it) => {
-            const active = it.is_active ? 'g' : 'r'
-            const stateTxt = it.is_active ? 'مفعّل' : 'موقوف'
-            const userTxt = it.username
-              ? '<span class="ad-pill s">' + esc(it.username) + '</span>'
-              : '<span class="ad-pill a">لم يسجّل</span>'
-            return (
-              '<tr><td class="ad-mono">' + esc(it.phone) + '</td>' +
-              '<td><span class="ad-pill ' + active + '">' + stateTxt + '</span></td>' +
-              '<td>' + userTxt + '</td>' +
-              '<td><div class="ad-actions">' +
-              '<button class="ad-mini" data-wl-toggle="' + esc(it.phone) + '" data-wl-active="' + (it.is_active ? '1' : '0') + '">' +
-              (it.is_active ? 'إيقاف' : 'تفعيل') + '</button>' +
-              '<button class="ad-mini d" data-wl-del="' + esc(it.phone) + '">حذف</button>' +
-              '</div></td></tr>'
-            )
-          })
-          .join('')
+            .map((item) => {
+              const stateClass = item.is_active ? 'g' : 'r'
+              const stateText = item.is_active ? 'مفعّل' : 'موقوف'
+              const owner = item.username
+                ? `<span class="ad-pill s">${escapeHtml(item.username)}</span>`
+                : '<span class="ad-pill a">لم يسجّل</span>'
+
+              return (
+                `<tr><td class="ad-mono">${escapeHtml(item.phone)}</td>` +
+                `<td><span class="ad-pill ${stateClass}">${stateText}</span></td>` +
+                `<td>${owner}</td>` +
+                '<td><div class="ad-actions">' +
+                `<button class="ad-mini" data-whitelist-toggle="${escapeHtml(item.phone)}" ` +
+                `data-whitelist-active="${item.is_active ? '1' : '0'}">` +
+                `${item.is_active ? 'إيقاف' : 'تفعيل'}</button>` +
+                `<button class="ad-mini d" data-whitelist-delete="${escapeHtml(item.phone)}">حذف</button>` +
+                '</div></td></tr>'
+              )
+            })
+            .join('')
         : '<tr><td colspan="4" class="ad-empty">لا يوجد أرقام مسموحة لسه</td></tr>'
     }
 
-    $('wlAddBtn').addEventListener('click', async () => {
-      const raw = $('wlPhones').value.trim()
-      if (!raw) return msg($('panelMsg'), 'اكتب رقم واحد على الأقل', 'err')
-      const label = $('wlLabel').value.trim()
-      try {
-        const res = await api('/admin/whitelist', { method: 'POST', body: { phones: raw, label } })
-        let txt = 'تم إضافة ' + res.count + ' رقم'
-        if (res.invalid && res.invalid.length) txt += ' — أرقام غير صحيحة: ' + res.invalid.join('، ')
-        msg($('panelMsg'), txt, 'ok')
-        $('wlPhones').value = ''
-        $('wlLabel').value = ''
-        loadAll()
-      } catch (err) {
-        msg($('panelMsg'), err.message, 'err')
-      }
-    })
-
-    document.addEventListener('click', async (e) => {
-      const t = e.target
-      if (!(t instanceof HTMLElement)) return
-      const phone = t.dataset.wlToggle
-      if (phone) {
-        const active = t.dataset.wlActive === '1' ? 0 : 1
-        try {
-          await api('/admin/whitelist/' + encodeURIComponent(phone), {
-            method: 'PATCH',
-            body: { is_active: active },
-          })
-          loadAll()
-        } catch (err) {
-          msg($('panelMsg'), err.message, 'err')
-        }
-      }
-      const del = t.dataset.wlDel
-      if (del) {
-        if (!confirm('متأكد إنك عايز تحذف الرقم ' + del + '؟')) return
-        try {
-          await api('/admin/whitelist/' + encodeURIComponent(del), { method: 'DELETE' })
-          msg($('panelMsg'), 'تم حذف الرقم', 'ok')
-          loadAll()
-        } catch (err) {
-          msg($('panelMsg'), err.message, 'err')
-        }
-      }
-    })
-
-    // ---------- المستخدمين ----------
-    function renderUsers(items) {
+    const renderUsers = (items) => {
       $('usCount').textContent = items.length
+
       $('usBody').innerHTML = items.length
         ? items
-          .map(
-            (u) =>
-              '<tr>' +
-              '<td class="ad-mono">' + u.id + '</td>' +
-              '<td>' + esc(u.username) + '</td>' +
-              '<td class="ad-mono">' + esc(u.phone) + '</td>' +
-              '<td><span class="ad-pill">' + esc(u.rank) + '</span></td>' +
-              '<td class="ad-mono" style="color:#86efac">' + u.score + '</td>' +
-              '<td class="ad-mono">' + u.lessonsDone + '</td>' +
-              '<td class="ad-mono">' + u.attempts + '</td>' +
-              '<td><span class="ad-pill ' + (u.role === 'admin' ? 'g' : 's') + '">' + esc(u.role) + '</span></td>' +
-              '<td><div class="ad-actions">' +
-              '<button class="ad-mini" data-us-edit="' + u.id + '">تعديل</button>' +
-              '<button class="ad-mini d" data-us-del="' + u.id + '">حذف</button>' +
-              '</div></td></tr>'
-          )
-          .join('')
+            .map(
+              (user) =>
+                `<tr><td class="ad-mono">${user.id}</td>` +
+                `<td>${escapeHtml(user.username)}</td>` +
+                `<td class="ad-mono">${escapeHtml(user.phone)}</td>` +
+                `<td><span class="ad-pill">${escapeHtml(user.rank)}</span></td>` +
+                `<td class="ad-mono" style="color:#86efac">${user.score}</td>` +
+                `<td class="ad-mono">${user.lessonsDone}</td>` +
+                `<td class="ad-mono">${user.attempts}</td>` +
+                `<td><span class="ad-pill ${user.role === 'admin' ? 'g' : 's'}">${escapeHtml(user.role)}</span></td>` +
+                '<td><div class="ad-actions">' +
+                `<button class="ad-mini" data-user-edit="${user.id}">تعديل</button>` +
+                `<button class="ad-mini d" data-user-delete="${user.id}">حذف</button>` +
+                '</div></td></tr>'
+            )
+            .join('')
         : '<tr><td colspan="9" class="ad-empty">لا يوجد مستخدمين لسه</td></tr>'
     }
 
-    document.addEventListener('click', async (e) => {
-      const t = e.target
-      if (!(t instanceof HTMLElement)) return
+    $('wlAddBtn').addEventListener('click', async () => {
+      const phones = $('wlPhones').value.trim()
+      if (!phones) {
+        notify($('panelMsg'), 'اكتب رقم واحد على الأقل', 'err')
+        return
+      }
 
-      const editId = t.dataset.usEdit
-      if (editId) {
-        const newScore = prompt('النقاط الجديدة (سيبه فاضي لو مش عايز تغيّر):')
-        const newPass = prompt('باسورد جديد (سيبه فاضي لو مش عايز تغيّر):')
-        const newRole = prompt('الدور (اكتب admin أو student — سيبه فاضي لو مش عايز تغيّر):')
-        const body = {}
-        if (newScore !== null && newScore.trim() !== '' && !isNaN(Number(newScore))) body.score = Number(newScore)
-        if (newPass) body.newPassword = newPass
-        if (newRole === 'admin' || newRole === 'student') body.role = newRole
-        if (!Object.keys(body).length) return
+      try {
+        const result = await window.Api.addToWhitelist(phones, $('wlLabel').value.trim())
+
+        let summary = `تم إضافة ${result.count} رقم`
+        if (result.invalid && result.invalid.length) {
+          summary += ` — أرقام غير صحيحة: ${result.invalid.join('، ')}`
+        }
+
+        notify($('panelMsg'), summary, 'ok')
+        $('wlPhones').value = ''
+        $('wlLabel').value = ''
+        loadDashboard()
+      } catch (err) {
+        notify($('panelMsg'), err.message, 'err')
+      }
+    })
+
+    document.addEventListener('click', async (event) => {
+      const target = event.target
+      if (!(target instanceof HTMLElement)) return
+
+      const togglePhone = target.dataset.whitelistToggle
+      if (togglePhone) {
+        const nextState = target.dataset.whitelistActive === '1' ? 0 : 1
         try {
-          await api('/admin/users/' + editId, { method: 'PATCH', body })
-          msg($('panelMsg'), 'تم تعديل بيانات المستخدم', 'ok')
-          loadAll()
+          await window.Api.toggleWhitelist(togglePhone, nextState)
+          loadDashboard()
         } catch (err) {
-          msg($('panelMsg'), err.message, 'err')
+          notify($('panelMsg'), err.message, 'err')
         }
       }
 
-      const delId = t.dataset.usDel
-      if (delId) {
-        if (!confirm('متأكد إنك عايز تحذف المستخدم رقم ' + delId + '؟ ده مش هيرجع!')) return
+      const removePhone = target.dataset.whitelistDelete
+      if (removePhone) {
+        if (!confirm(`متأكد إنك عايز تحذف الرقم ${removePhone}؟`)) return
+
         try {
-          await api('/admin/users/' + delId, { method: 'DELETE' })
-          msg($('panelMsg'), 'تم حذف المستخدم', 'ok')
-          loadAll()
+          await window.Api.deleteWhitelist(removePhone)
+          notify($('panelMsg'), 'تم حذف الرقم', 'ok')
+          loadDashboard()
         } catch (err) {
-          msg($('panelMsg'), err.message, 'err')
+          notify($('panelMsg'), err.message, 'err')
         }
       }
     })
 
-    // ---------- إقلاع ----------
-    ;(async function boot() {
-      try {
-        const me = await api('/auth/me')
-        if (!me.user || me.user.role !== 'admin') {
-          return showLogin()
+    document.addEventListener('click', async (event) => {
+      const target = event.target
+      if (!(target instanceof HTMLElement)) return
+
+      const editId = target.dataset.userEdit
+      if (editId) {
+        const score = prompt('النقاط الجديدة (سيبه فاضي لو مش عايز تغيّر):')
+        const password = prompt('باسورد جديد (سيبه فاضي لو مش عايز تغيّر):')
+        const role = prompt('الدور (اكتب admin أو student — سيبه فاضي لو مش عايز تغيّر):')
+
+        const changes = {}
+        if (score && !isNaN(Number(score))) changes.score = Number(score)
+        if (password) changes.newPassword = password
+        if (role === 'admin' || role === 'student') changes.role = role
+
+        if (!Object.keys(changes).length) return
+
+        try {
+          await window.Api.updateUser(editId, changes)
+          notify($('panelMsg'), 'تم تعديل بيانات المستخدم', 'ok')
+          loadDashboard()
+        } catch (err) {
+          notify($('panelMsg'), err.message, 'err')
         }
+      }
+
+      const removeId = target.dataset.userDelete
+      if (removeId) {
+        if (!confirm(`متأكد إنك عايز تحذف المستخدم رقم ${removeId}؟ ده مش هيرجع!`)) return
+
+        try {
+          await window.Api.deleteUser(removeId)
+          notify($('panelMsg'), 'تم حذف المستخدم', 'ok')
+          loadDashboard()
+        } catch (err) {
+          notify($('panelMsg'), err.message, 'err')
+        }
+      }
+    })
+
+    const start = async () => {
+      try {
+        const data = await window.Api.me()
+
+        if (!data.user || data.user.role !== 'admin') {
+          showLogin()
+          return
+        }
+
         showPanel()
-        renderWho(me.user)
-        loadAll()
-      } catch {
-        // مفيش جلسة صالحة — نور شاشة الدخول
+        showIdentity(data.user)
+        loadDashboard()
+      } catch (err) {
         showLogin()
       }
-    })()
+    }
+
+    start()
   </script>
 </body>
 
