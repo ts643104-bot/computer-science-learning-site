@@ -14,7 +14,7 @@
 
 // ⚠️ حط هنا رابط الـ Web App بتاعك (اللي بيكمل بـ /exec)
 var APPS_SCRIPT_URL =
-  'https://script.google.com/macros/s/AKfycbzGiU1YmRuPGOLrddE1zyjywEZ8sFGrO1AsEfe2DB-RFtngQcd6jdsv6rqxnk7zr1EmCQ/exec'
+  'https://script.google.com/macros/s/AKfycbzKGAvn_26J6Rz1UpsgkhnFLzhatT_uQ4i4siUQyPgjjdA8wEDvK5ir5LT6L5Qm0nlipA/exec'
 
 // المفتاح السري — لازم يطابق API_KEY اللي في كود Apps Script
 var API_KEY = 'A3-SHABAKA-WA-3OLOOM-2026'
