@@ -1,0 +1,41 @@
+# ---------- الاعتماديات ----------
+node_modules/
+package-lock.json
+
+# ---------- قاعدة البيانات (بيانات حقيقية - مش تترفع) ----------
+data/
+*.sqlite
+*.sqlite3
+*.db
+
+# ---------- ملفات النسخ الاحتياطية ----------
+*.bak
+*.backup
+*.old
+
+# ---------- اللوجات ----------
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ---------- الأسرار ومتغيرات البيئة ----------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ---------- ملفات النظام والمحرر ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+
+# ---------- مؤقتة ----------
+tmp/
+temp/
+*.tmp

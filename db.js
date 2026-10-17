@@ -66,6 +66,20 @@ CREATE TABLE IF NOT EXISTS attempts (
 
 CREATE INDEX IF NOT EXISTS idx_attempts_user ON attempts(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
+
+-- حد لمحاولات الدخول (حماية من تخمين الباسورد)
+CREATE TABLE IF NOT EXISTS login_attempts (
+  key        TEXT PRIMARY KEY,
+  count      INTEGER NOT NULL DEFAULT 0,
+  first_at   TEXT NOT NULL,
+  locked_until TEXT
+);
+
+-- إعدادات عامة (مفاتيح إدارية زي التفعيل الذاتي)
+CREATE TABLE IF NOT EXISTS settings (
+  key    TEXT PRIMARY KEY,
+  value  TEXT NOT NULL
+);
 `
 
 async function init() {
@@ -109,4 +123,16 @@ function get(sql, params = []) {
   return all(sql, params)[0] || null
 }
 
-module.exports = { init, run, all, get, save, DB_FILE, DATA_DIR }
+function getSetting(key, fallback = null) {
+  const row = get('SELECT value FROM settings WHERE key = ?', [key])
+  return row ? row.value : fallback
+}
+
+function setSetting(key, value) {
+  run('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value', [
+    key,
+    String(value),
+  ])
+}
+
+module.exports = { init, run, all, get, save, getSetting, setSetting, DB_FILE, DATA_DIR }

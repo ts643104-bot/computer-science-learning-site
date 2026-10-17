@@ -4,6 +4,7 @@
 const express = require('express')
 const db = require('../db')
 const A = require('../auth')
+const RL = require('../ratelimit')
 const { progressLevel, TOTAL_LESSONS } = require('../scoring')
 
 const router = express.Router()
@@ -61,7 +62,8 @@ router.post('/register', (req, res) => {
 })
 
 // ---------- الدخول ----------
-router.post('/login', (req, res) => {
+// بنحمي المسار ده من محاولات التخمين المتكررة (brute-force)
+router.post('/login', RL.guard('login'), (req, res) => {
   const phone = A.normalizePhone(req.body?.phone)
   const password = String(req.body?.password || '')
   if (!phone || !password) {
@@ -69,8 +71,19 @@ router.post('/login', (req, res) => {
   }
   const row = db.get('SELECT * FROM users WHERE phone = ?', [phone])
   if (!row || !A.checkPassword(password, row.pass_hash)) {
+    // محاولة فاشلة — بنسجّلها ونقول للطالب فاضل له كام محاولة
+    const retry = RL.registerFailure(req, 'login')
+    if (retry) {
+      res.set('Retry-After', String(retry))
+      return res.status(429).json({
+        error: `جرّبت كتير أوي. استنى ${Math.ceil(retry / 60)} دقيقة وجرّب تاني.`,
+        code: 'TOO_MANY_ATTEMPTS',
+        retryAfter: retry,
+      })
+    }
     return res.status(401).json({ error: 'الرقم أو الباسورد غلط' })
   }
+  RL.reset(req, 'login')
   const now = new Date().toISOString()
   db.run('UPDATE users SET last_login = ? WHERE id = ?', [now, row.id])
   const token = A.createSession(row.id)

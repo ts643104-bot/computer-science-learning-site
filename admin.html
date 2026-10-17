@@ -652,6 +652,20 @@
     const TOKEN_KEY = 'swn-token-v1'
     const $ = (id) => document.getElementById(id)
 
+    // ---------- حماية: الصفحة لازم تتفتح من السيرفر مش بالدبل كليك ----------
+    // لو فتحت الملف مباشرة (file://) الطلبات هتفشل بـ 405 لأن مفيش سيرفر يرد.
+    if (location.protocol === 'file:') {
+      document.body.innerHTML =
+        '<div style="font-family:sans-serif;padding:3rem;text-align:center;direction:rtl;background:#070c17;color:#f1f5f9;min-height:100vh">' +
+        '<h1 style="font-size:1.6rem;margin-bottom:1rem">⚠️ افتح اللوحة من السيرفر</h1>' +
+        '<p style="line-height:2;color:#94a3b8">انت فاتح الملف مباشرة من الجهاز، ولوحة الأدمن محتاجة السيرفر شغّال.</p>' +
+        '<p style="margin-top:1.5rem;font-size:1.1rem">افتح الرابط ده بدل كده:</p>' +
+        '<p style="margin-top:.5rem"><a href="http://127.0.0.1:5178/admin.html" style="color:#4ade80;font-size:1.15rem;font-weight:700">http://127.0.0.1:5178/admin.html</a></p>' +
+        '<p style="margin-top:2rem;color:#64748b;font-size:.9rem">ولو السيرفر مش شغّال، افتح Terminal وشغّل:<br><code style="color:#7dd3fc">node server.js</code></p>' +
+        '</div>'
+      throw new Error('file:// protocol — stopped before app init')
+    }
+
     const getToken = () => {
       try {
         return localStorage.getItem(TOKEN_KEY) || ''
