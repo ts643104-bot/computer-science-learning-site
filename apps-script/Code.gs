@@ -178,7 +178,7 @@ function cleanPhone(input) {
 
 function displayPhone(phone) {
   if (!/^01[0125][0-9]{8}$/.test(phone)) return phone
-  return phone.substring(0, 4) + ' + phone.substring(4, 7) + ' + phone.substring(7)
+  return phone.replace(/^(\d{4})(\d{3})(\d{4})$/, '$1 $2 $3')
 }
 
 function rankOf(score) {
@@ -479,7 +479,7 @@ function addComment(body) {
 
   var comment = String(body.comment || '').trim()
   if (comment.length > 1000) {
-    return { ok: false, error: 'التعليق طويل أوي (الحد ١٠ حرف)' }
+    return { ok: false, error: 'التعليق طويل أوي (الحد ١٠٠٠ حرف)' }
   }
 
   var user = currentUser(body)
