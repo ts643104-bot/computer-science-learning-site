@@ -77,12 +77,19 @@ function doPost(e) {
   var handler = handlers[body.action]
   if (!handler) return reply({ ok: false, error: 'الإجراء ده مش معروف: ' + body.action })
 
+  var lock = LockService.getScriptLock()
+
   try {
+    lock.waitLock(25000)
     var result = handler(body)
     commit()
     return reply(result)
   } catch (err) {
     return reply({ ok: false, error: 'خطأ في السيرفر: ' + (err && err.message) })
+  } finally {
+    try {
+      lock.releaseLock()
+    } catch (e) {}
   }
 }
 
@@ -110,8 +117,9 @@ function openSheet(name) {
   if (!sheet) sheet = book.insertSheet(name)
 
   if (sheet.getLastRow() === 0) {
-    sheet.appendRow(SHEETS[name])
-    sheet.getRange(1, 1, 1, SHEETS[name].length).setFontWeight('bold')
+    var headers = SHEETS[name]
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers])
+    sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold')
     sheet.setFrozenRows(1)
     SpreadsheetApp.flush()
   }
@@ -121,6 +129,14 @@ function openSheet(name) {
 
 function commit() {
   SpreadsheetApp.flush()
+}
+
+function appendRecord(name, values) {
+  var sheet = openSheet(name)
+  var row = sheet.getLastRow() + 1
+  sheet.getRange(row, 1, 1, values.length).setValues([values])
+  SpreadsheetApp.flush()
+  return row
 }
 
 function readSheet(name) {
@@ -311,8 +327,7 @@ function register(body) {
   }
 
   var now = new Date().toISOString()
-  openSheet('users').appendRow([phone, username, hashPassword(password), 0, 'student', now, now])
-  commit()
+  appendRecord('users', [phone, username, hashPassword(password), 0, 'student', now, now])
 
   return {
     ok: true,
@@ -421,7 +436,7 @@ function completeLesson(body) {
   var earned = POINTS.lessonDone
   if (own.length === 0) earned += POINTS.firstLesson
 
-  openSheet('progress').appendRow([
+  appendRecord('progress', [
     String(user.phone),
     lessonId,
     new Date().toISOString(),
@@ -429,7 +444,6 @@ function completeLesson(body) {
     '',
     earned,
   ])
-  commit()
 
   var score = addPoints(user.phone, earned)
   return { ok: true, added: earned, score: score, rank: rankOf(score) }
@@ -453,7 +467,7 @@ function submitQuiz(body) {
   var perfect = correct === total
   var earned = correct * POINTS.perCorrect + (perfect ? POINTS.perfectBonus : 0)
 
-  openSheet('progress').appendRow([
+  appendRecord('progress', [
     String(user.phone),
     lessonId,
     new Date().toISOString(),
@@ -461,7 +475,6 @@ function submitQuiz(body) {
     total,
     earned,
   ])
-  commit()
 
   var score = addPoints(user.phone, earned)
   return { ok: true, added: earned, perfect: perfect, score: score, rank: rankOf(score) }
@@ -501,7 +514,7 @@ function addComment(body) {
   var phone = user ? String(user.phone) : 'guest'
   var username = user ? String(user.username) : String(body.guestName || 'زائر').substring(0, 24)
 
-  openSheet('comments').appendRow([
+  appendRecord('comments', [
     new Date().toISOString(),
     phone,
     username,
@@ -509,7 +522,6 @@ function addComment(body) {
     rating,
     comment,
   ])
-  commit()
 
   return {
     ok: true,
@@ -696,7 +708,7 @@ function addToWhitelist(body) {
     if (existing) {
       sheet.getRange(existing.rowNumber, columnOf('whitelist', 'isActive')).setValue(1)
     } else {
-      sheet.appendRow([phone, String(body.label || ''), 1, String(check.user.username), now])
+      appendRecord('whitelist', [phone, String(body.label || ''), 1, String(check.user.username), now])
     }
     added.push(phone)
   }
@@ -864,7 +876,7 @@ function setupSheets(resetAdminPassword) {
   var existing = findRecord('users', 'phone', adminPhone)
 
   if (!existing) {
-    openSheet('users').appendRow([adminPhone, adminUser, adminHash, 9999, 'admin', now, now])
+    appendRecord('users', [adminPhone, adminUser, adminHash, 9999, 'admin', now, now])
   } else if (resetAdminPassword) {
     openSheet('users')
       .getRange(existing.rowNumber, columnOf('users', 'passHash'))
@@ -874,7 +886,7 @@ function setupSheets(resetAdminPassword) {
 
   var wlRow = findRecord('whitelist', 'phone', adminPhone)
   if (!wlRow) {
-    openSheet('whitelist').appendRow([adminPhone, 'حساب الأدمن', 1, 'setup', now])
+    appendRecord('whitelist', [adminPhone, 'حساب الأدمن', 1, 'setup', now])
   } else {
     openSheet('whitelist')
       .getRange(wlRow.rowNumber, columnOf('whitelist', 'isActive'))
