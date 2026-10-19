@@ -460,9 +460,6 @@
         </form>
 
         <p style="text-align: center; margin-top: 1.25rem; font-size: 0.8rem">
-          <a class="text-slate-400 hover:text-slate-200" href="https://t.me/a3Taha" target="_blank"
-            rel="noopener noreferrer">📩 طلب اشتراك جديد</a>
-          <span class="text-slate-600"> · </span>
           <a class="text-slate-400 hover:text-slate-200" href="./index.html">رجوع للموقع</a>
         </p>
       </div>
@@ -685,8 +682,61 @@
       $('whoAmI').textContent = `${user.username || 'أدمن'} — ${phone}`
     }
 
+    const LOCK_KEY = 'admin-lock-v1'
+    const DAY_MS = 24 * 60 * 60 * 1000
+
+    const readLock = () => {
+      try {
+        return JSON.parse(localStorage.getItem(LOCK_KEY) || '{"attempts":0,"until":0,"permanent":false}')
+      } catch (err) {
+        return { attempts: 0, until: 0, permanent: false }
+      }
+    }
+
+    const writeLock = (state) => {
+      try {
+        localStorage.setItem(LOCK_KEY, JSON.stringify(state))
+      } catch (err) {}
+    }
+
+    const clearLock = () => {
+      try {
+        localStorage.removeItem(LOCK_KEY)
+      } catch (err) {}
+    }
+
+    const hoursLeft = (until) => Math.ceil((until - Date.now()) / 3600000)
+
+    const lockMessage = (state) => {
+      if (state.permanent) {
+        return 'تم قفل لوحة الأدمن على هذا الجهاز نهائيًا بسبب تكرار المحاولات الخاطئة.'
+      }
+      if (state.until > Date.now()) {
+        return `تم إيقاف تسجيل الدخول مؤقتًا على هذا الجهاز. حاول بعد ${hoursLeft(state.until)} ساعة.`
+      }
+      return ''
+    }
+
+    const applyLockState = () => {
+      const state = readLock()
+      const locked = state.permanent || state.until > Date.now()
+
+      $('phone').disabled = locked
+      $('password').disabled = locked
+      $('loginBtn').disabled = locked
+      $('loginBtn').textContent = locked ? 'الدخول مقفول' : 'دخول للوحة التحكم'
+
+      if (locked) {
+        notify($('loginMsg'), lockMessage(state), 'err')
+      }
+
+      return locked
+    }
+
     $('loginForm').addEventListener('submit', async (event) => {
       event.preventDefault()
+
+      if (applyLockState()) return
 
       const button = $('loginBtn')
       button.disabled = true
@@ -699,15 +749,30 @@
           throw new Error('الحساب ده مش حساب أدمن')
         }
 
+        clearLock()
         $('password').value = ''
         showPanel()
         showIdentity(data.user)
         loadDashboard()
       } catch (err) {
-        notify($('loginMsg'), err.message, 'err')
+        const state = readLock()
+        const attempts = (state.attempts || 0) + 1
+
+        if (attempts >= 2) {
+          writeLock({ attempts, until: 0, permanent: true })
+          notify($('loginMsg'), lockMessage(readLock()), 'err')
+          applyLockState()
+          return
+        }
+
+        writeLock({ attempts, until: Date.now() + DAY_MS, permanent: false })
+        notify($('loginMsg'), lockMessage(readLock()), 'err')
+        applyLockState()
       } finally {
-        button.disabled = false
-        button.textContent = 'دخول للوحة التحكم'
+        const state = readLock()
+        const locked = state.permanent || state.until > Date.now()
+        button.disabled = locked
+        button.textContent = locked ? 'الدخول مقفول' : 'دخول للوحة التحكم'
       }
     })
 
@@ -942,6 +1007,8 @@
       }
     }
 
+    showLogin()
+    applyLockState()
     start()
   </script>
 </body>

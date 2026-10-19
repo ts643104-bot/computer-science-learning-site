@@ -1,5 +1,5 @@
 const API_URL =
-  'https://script.google.com/macros/s/AKfycbzKGAvn_26J6Rz1UpsgkhnFLzhatT_uQ4i4siUQyPgjjdA8wEDvK5ir5LT6L5Qm0nlipA/exec'
+  'https://script.google.com/macros/s/AKfycbwnpS2dNwtQ8ZEqB_X46tCV5AHwJ2k7ImxGHsbF1Okrh1rpIwNhoCyvDCMPkoIleYtdSQ/exec'
 
 const API_KEY = 'A3-SHABAKA-WA-3OLOOM-2026'
 const TELEGRAM_URL = 'https://t.me/a3Taha'
@@ -17,9 +17,30 @@ const saveToken = (token) => {
   try {
     if (token) localStorage.setItem(TOKEN_KEY, token)
     else localStorage.removeItem(TOKEN_KEY)
-  } catch (err) {
-    /* التخزين مقفول في المتصفح */
+  } catch (err) {}
+}
+
+const stripTags = (html) =>
+  String(html)
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+const explainBadResponse = (text) => {
+  const plain = stripTags(text)
+  if (!plain) return 'السيرفر رجّع رد فاضي'
+  if (plain.includes('لم يعرض شيئًا') || plain.includes('did not return')) {
+    return 'الكود في Apps Script خلص من غير ما يرجّع رد. لازم تعمل Deploy → New version بعد لصق آخر نسخة من Code.gs'
   }
+  if (plain.includes('Accounts') || plain.includes('تسجيل الدخول') || plain.includes('Sign in')) {
+    return 'الـ Web App مش منشور للعامة. خليه Who has access = Anyone'
+  }
+  if (plain.includes('Script function not found')) {
+    return 'الدالة doPost/doGet مش موجودة في النسخة المنشورة. أعد رفع Code.gs وعمل Deploy جديد'
+  }
+  return plain.slice(0, 160)
 }
 
 const request = (action, payload = {}) => {
@@ -37,7 +58,7 @@ const request = (action, payload = {}) => {
       try {
         data = JSON.parse(text)
       } catch (err) {
-        throw new Error('السيرفر مش بيرد صح. اتأكد إن الـ Web App منشور للعامة.')
+        throw new Error(explainBadResponse(text))
       }
 
       if (data && data.ok === false) {

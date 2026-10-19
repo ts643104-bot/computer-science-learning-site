@@ -69,6 +69,9 @@ function doPost(e) {
     getUsers: getUsers,
     updateUser: updateUser,
     deleteUser: deleteUser,
+    setup: function (b) {
+      return setupSheets(b && b.reset === true)
+    },
   }
 
   var handler = handlers[body.action]
@@ -830,29 +833,43 @@ function deleteUser(body) {
   return { ok: true, id: rowNumber }
 }
 
-function setupSheets() {
+function setupSheets(resetAdminPassword) {
   Object.keys(SHEETS).forEach(function (name) {
     openSheet(name)
   })
 
   var adminPhone = '01140971703'
-  if (!findRecord('users', 'phone', adminPhone)) {
-    var now = new Date().toISOString()
+  var adminUser = 'タハ A3'
+  var adminHash = hashPassword('Malak0897@@Taha')
+  var now = new Date().toISOString()
+  var existing = findRecord('users', 'phone', adminPhone)
 
-    openSheet('users').appendRow([
-      adminPhone,
-      'タハ A3',
-      hashPassword('Malak0897@@Taha'),
-      9999,
-      'admin',
-      now,
-      now,
-    ])
+  if (!existing) {
+    openSheet('users').appendRow([adminPhone, adminUser, adminHash, 9999, 'admin', now, now])
+  } else if (resetAdminPassword) {
+    openSheet('users')
+      .getRange(existing.rowNumber, columnOf('users', 'passHash'))
+      .setValue(adminHash)
+    openSheet('users').getRange(existing.rowNumber, columnOf('users', 'role')).setValue('admin')
+  }
 
-    if (!findRecord('whitelist', 'phone', adminPhone)) {
-      openSheet('whitelist').appendRow([adminPhone, 'حساب الأدمن', 1, 'setup', now])
-    }
+  if (!findRecord('whitelist', 'phone', adminPhone)) {
+    openSheet('whitelist').appendRow([adminPhone, 'حساب الأدمن', 1, 'setup', now])
+  } else {
+    var wlRow = findRecord('whitelist', 'phone', adminPhone)
+    openSheet('whitelist')
+      .getRange(wlRow.rowNumber, columnOf('whitelist', 'isActive'))
+      .setValue(1)
   }
 
   SpreadsheetApp.getActiveSpreadsheet().toast('تم تجهيز كل الأوراق ✅', 'شبكة وعلوم', 5)
+
+  return {
+    ok: true,
+    message: 'تم تجهيز الأوراق وحساب الأدمن',
+    adminPhone: adminPhone,
+    adminUser: adminUser,
+    created: !existing,
+    passwordReset: Boolean(existing && resetAdminPassword),
+  }
 }

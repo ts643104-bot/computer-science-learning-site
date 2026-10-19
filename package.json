@@ -5,7 +5,8 @@
   "description": "منصة شبكة وعلوم — API + الموقع في فولدر واحد",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "serve": "npx serve ."
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

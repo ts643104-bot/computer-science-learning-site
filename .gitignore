@@ -49,3 +49,5 @@ verify-icons.mjs
 shot-footer.mjs
 footer_old.txt
 *.png
+
+.vercel
