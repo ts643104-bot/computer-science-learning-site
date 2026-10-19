@@ -78,7 +78,9 @@ function doPost(e) {
   if (!handler) return reply({ ok: false, error: 'الإجراء ده مش معروف: ' + body.action })
 
   try {
-    return reply(handler(body))
+    var result = handler(body)
+    commit()
+    return reply(result)
   } catch (err) {
     return reply({ ok: false, error: 'خطأ في السيرفر: ' + (err && err.message) })
   }
@@ -111,9 +113,14 @@ function openSheet(name) {
     sheet.appendRow(SHEETS[name])
     sheet.getRange(1, 1, 1, SHEETS[name].length).setFontWeight('bold')
     sheet.setFrozenRows(1)
+    SpreadsheetApp.flush()
   }
 
   return sheet
+}
+
+function commit() {
+  SpreadsheetApp.flush()
 }
 
 function readSheet(name) {
@@ -305,6 +312,7 @@ function register(body) {
 
   var now = new Date().toISOString()
   openSheet('users').appendRow([phone, username, hashPassword(password), 0, 'student', now, now])
+  commit()
 
   return {
     ok: true,
@@ -329,6 +337,7 @@ function login(body) {
 
   var now = new Date().toISOString()
   openSheet('users').getRange(user.rowNumber, columnOf('users', 'lastLogin')).setValue(now)
+  commit()
   user.lastLogin = now
 
   return { ok: true, token: issueToken(phone), user: toPublicUser(user) }
@@ -367,6 +376,7 @@ function me(body) {
 
 function writeScore(user, score) {
   openSheet('users').getRange(user.rowNumber, columnOf('users', 'score')).setValue(score)
+  commit()
 }
 
 function addPoints(phone, points) {
@@ -419,6 +429,7 @@ function completeLesson(body) {
     '',
     earned,
   ])
+  commit()
 
   var score = addPoints(user.phone, earned)
   return { ok: true, added: earned, score: score, rank: rankOf(score) }
@@ -450,6 +461,7 @@ function submitQuiz(body) {
     total,
     earned,
   ])
+  commit()
 
   var score = addPoints(user.phone, earned)
   return { ok: true, added: earned, perfect: perfect, score: score, rank: rankOf(score) }
@@ -497,6 +509,7 @@ function addComment(body) {
     rating,
     comment,
   ])
+  commit()
 
   return {
     ok: true,
@@ -687,6 +700,7 @@ function addToWhitelist(body) {
     }
     added.push(phone)
   }
+  commit()
 
   return { ok: true, added: added, invalid: invalid, count: added.length }
 }
@@ -705,6 +719,7 @@ function toggleWhitelist(body) {
   openSheet('whitelist')
     .getRange(entry.rowNumber, columnOf('whitelist', 'isActive'))
     .setValue(isActive)
+  commit()
 
   return { ok: true, phone: phone, is_active: isActive }
 }
@@ -720,6 +735,7 @@ function deleteWhitelist(body) {
   if (!entry) return { ok: true, phone: phone }
 
   openSheet('whitelist').deleteRow(entry.rowNumber)
+  commit()
   return { ok: true, phone: phone }
 }
 
@@ -794,6 +810,8 @@ function updateUser(body) {
     sheet.getRange(rowNumber, columnOf('users', 'passHash')).setValue(hashPassword(password))
   }
 
+  commit()
+
   var updated = readSheet('users').filter(function (user) {
     return user.rowNumber === rowNumber
   })[0]
@@ -829,6 +847,7 @@ function deleteUser(body) {
     })
 
   openSheet('users').deleteRow(rowNumber)
+  commit()
 
   return { ok: true, id: rowNumber }
 }
@@ -853,23 +872,27 @@ function setupSheets(resetAdminPassword) {
     openSheet('users').getRange(existing.rowNumber, columnOf('users', 'role')).setValue('admin')
   }
 
-  if (!findRecord('whitelist', 'phone', adminPhone)) {
+  var wlRow = findRecord('whitelist', 'phone', adminPhone)
+  if (!wlRow) {
     openSheet('whitelist').appendRow([adminPhone, 'حساب الأدمن', 1, 'setup', now])
   } else {
-    var wlRow = findRecord('whitelist', 'phone', adminPhone)
     openSheet('whitelist')
       .getRange(wlRow.rowNumber, columnOf('whitelist', 'isActive'))
       .setValue(1)
   }
 
-  SpreadsheetApp.getActiveSpreadsheet().toast('تم تجهيز كل الأوراق ✅', 'شبكة وعلوم', 5)
+  commit()
+
+  var savedUser = findRecord('users', 'phone', adminPhone)
+  var savedWl = findRecord('whitelist', 'phone', adminPhone)
 
   return {
-    ok: true,
-    message: 'تم تجهيز الأوراق وحساب الأدمن',
+    ok: Boolean(savedUser && savedWl),
+    message: savedUser && savedWl ? 'تم تجهيز الأوراق وحساب الأدمن' : 'فشل حفظ البيانات في الشيت',
     adminPhone: adminPhone,
     adminUser: adminUser,
     created: !existing,
     passwordReset: Boolean(existing && resetAdminPassword),
+    verified: Boolean(savedUser && savedWl),
   }
 }

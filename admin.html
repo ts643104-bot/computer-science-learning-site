@@ -683,13 +683,20 @@
     }
 
     const LOCK_KEY = 'admin-lock-v1'
-    const DAY_MS = 24 * 60 * 60 * 1000
+    const MAX_ATTEMPTS = 3
+    const LOCK_MS = 24 * 60 * 60 * 1000
+
+    const emptyLock = () => ({ attempts: 0, until: 0 })
 
     const readLock = () => {
       try {
-        return JSON.parse(localStorage.getItem(LOCK_KEY) || '{"attempts":0,"until":0,"permanent":false}')
+        const saved = JSON.parse(localStorage.getItem(LOCK_KEY) || 'null')
+        if (!saved || typeof saved !== 'object') return emptyLock()
+        if (saved.until && saved.until > Date.now()) return saved
+        if (saved.until && saved.until <= Date.now()) return emptyLock()
+        return { attempts: Number(saved.attempts) || 0, until: 0 }
       } catch (err) {
-        return { attempts: 0, until: 0, permanent: false }
+        return emptyLock()
       }
     }
 
@@ -705,30 +712,37 @@
       } catch (err) {}
     }
 
-    const hoursLeft = (until) => Math.ceil((until - Date.now()) / 3600000)
+    const isLocked = (state) => state.until > Date.now()
+
+    const timeLeftText = (until) => {
+      const ms = until - Date.now()
+      const hours = Math.floor(ms / 3600000)
+      const minutes = Math.ceil((ms % 3600000) / 60000)
+      if (hours <= 0) return `${minutes} دقيقة`
+      return `${hours} ساعة و${minutes} دقيقة`
+    }
 
     const lockMessage = (state) => {
-      if (state.permanent) {
-        return 'تم قفل لوحة الأدمن على هذا الجهاز نهائيًا بسبب تكرار المحاولات الخاطئة.'
+      if (isLocked(state)) {
+        return `تم قفل الدخول لمدة ٢٤ ساعة بسبب ٣ محاولات خاطئة. الباقي: ${timeLeftText(state.until)}.`
       }
-      if (state.until > Date.now()) {
-        return `تم إيقاف تسجيل الدخول مؤقتًا على هذا الجهاز. حاول بعد ${hoursLeft(state.until)} ساعة.`
+      const left = MAX_ATTEMPTS - (state.attempts || 0)
+      if (left > 0 && left < MAX_ATTEMPTS) {
+        return `الباسورد غلط. فاضل لك ${left} ${left === 1 ? 'محاولة' : 'محاولات'} قبل القفل ٢٤ ساعة.`
       }
       return ''
     }
 
     const applyLockState = () => {
       const state = readLock()
-      const locked = state.permanent || state.until > Date.now()
+      const locked = isLocked(state)
 
       $('phone').disabled = locked
       $('password').disabled = locked
       $('loginBtn').disabled = locked
       $('loginBtn').textContent = locked ? 'الدخول مقفول' : 'دخول للوحة التحكم'
 
-      if (locked) {
-        notify($('loginMsg'), lockMessage(state), 'err')
-      }
+      if (locked) notify($('loginMsg'), lockMessage(state), 'err')
 
       return locked
     }
@@ -758,21 +772,17 @@
         const state = readLock()
         const attempts = (state.attempts || 0) + 1
 
-        if (attempts >= 2) {
-          writeLock({ attempts, until: 0, permanent: true })
-          notify($('loginMsg'), lockMessage(readLock()), 'err')
-          applyLockState()
-          return
+        if (attempts >= MAX_ATTEMPTS) {
+          const locked = { attempts, until: Date.now() + LOCK_MS }
+          writeLock(locked)
+          notify($('loginMsg'), lockMessage(locked), 'err')
+        } else {
+          const next = { attempts, until: 0 }
+          writeLock(next)
+          notify($('loginMsg'), lockMessage(next), 'err')
         }
-
-        writeLock({ attempts, until: Date.now() + DAY_MS, permanent: false })
-        notify($('loginMsg'), lockMessage(readLock()), 'err')
-        applyLockState()
       } finally {
-        const state = readLock()
-        const locked = state.permanent || state.until > Date.now()
-        button.disabled = locked
-        button.textContent = locked ? 'الدخول مقفول' : 'دخول للوحة التحكم'
+        applyLockState()
       }
     })
 
