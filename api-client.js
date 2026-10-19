@@ -3,6 +3,7 @@ const API_URL =
 
 const API_KEY = 'A3-SHABAKA-WA-3OLOOM-2026'
 const TELEGRAM_URL = 'https://t.me/a3Taha'
+const WHATSAPP_URL = 'https://wa.me/201140971703'
 const TOKEN_KEY = 'swn-token-v1'
 
 const readToken = () => {
@@ -149,3 +150,4 @@ const Api = {
 
 window.Api = Api
 window.TELEGRAM_URL = TELEGRAM_URL
+window.WHATSAPP_URL = WHATSAPP_URL

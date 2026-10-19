@@ -190,12 +190,17 @@
       font-weight: 600;
     }
 
-    .lg-telegram {
+    .lg-contact {
+      display: grid;
+      gap: 0.5rem;
+      margin-top: 1.25rem;
+    }
+
+    .lg-contact-link {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 0.45rem;
-      margin-top: 1.25rem;
       padding: 0.65rem 1rem;
       border-radius: 999px;
       border: 1px dashed #38bdf866;
@@ -206,7 +211,7 @@
       transition: all 0.18s ease;
     }
 
-    .lg-telegram:hover {
+    .lg-contact-link:hover {
       background: #38bdf81f;
       border-color: #38bdf8aa;
     }
@@ -267,9 +272,14 @@
           <button class="lg-btn" type="submit" id="submitBtn">تسجيل الدخول</button>
         </form>
 
-        <a class="lg-telegram" href="https://t.me/a3Taha" target="_blank" rel="noopener noreferrer">
-          📩 طلب اشتراك جديد على تليجرام
-        </a>
+        <div class="lg-contact">
+          <a class="lg-contact-link" href="https://wa.me/201140971703" target="_blank" rel="noopener noreferrer">
+            💬 طلب اشتراك عبر واتساب
+          </a>
+          <a class="lg-contact-link" href="https://t.me/a3Taha" target="_blank" rel="noopener noreferrer">
+            📩 طلب اشتراك عبر تليجرام
+          </a>
+        </div>
 
         <p style="text-align:center; margin-top:1rem; font-size:0.8rem">
           <a class="text-slate-400 hover:text-slate-200" href="./index.html">رجوع للموقع</a>
@@ -280,6 +290,8 @@
     </div>
   </div>
 
+  <script src="./firebase-config.js"></script>
+  <script type="module" src="./firebase-init.js"></script>
   <script src="./api-client.js"></script>
   <script>
     const $ = (id) => document.getElementById(id)
@@ -309,17 +321,19 @@
       notify('')
     }
 
-    const telegramNotice = (message) =>
+    const contactNotice = (message) =>
       message +
-      '<br><a href="' + window.TELEGRAM_URL + '" target="_blank" rel="noopener noreferrer">' +
-      '📩 اضغط هنا لطلب اشتراك جديد على تليجرام</a>'
+      '<br><a href="' + window.WHATSAPP_URL + '" target="_blank" rel="noopener noreferrer">' +
+      '💬 تواصل واتساب</a> · ' +
+      '<a href="' + window.TELEGRAM_URL + '" target="_blank" rel="noopener noreferrer">' +
+      '📩 تواصل تليجرام</a>'
 
     const friendlyError = (err) => {
       const code = err && err.code
       const text = (err && err.message) || 'حصل خطأ غير متوقع'
 
       if (code === 'NOT_WHITELISTED' || text.includes('مش مسموح')) {
-        return telegramNotice('رقمك مش مسجّل في قائمة المشتركين.')
+        return contactNotice('رقمك مش مسجّل في قائمة المشتركين. اطلب إضافته:')
       }
       if (code === 'PHONE_TAKEN') {
         return 'الرقم ده متسجّل بالفعل — جرّب تسجيل الدخول.'
@@ -331,7 +345,7 @@
         return 'الرقم أو الباسورد غلط.'
       }
       if (text.includes('مش قادر أوصل') || text.includes('مش بيرد صح') || text.includes('منشور')) {
-        return telegramNotice('مش قادر أوصل للسيرفر دلوقتي.')
+        return contactNotice('مش قادر أوصل للسيرفر دلوقتي.')
       }
       return text
     }
