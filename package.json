@@ -1,16 +1,12 @@
 {
-  "name": "shabaka-wa-3oloom-app",
-  "version": "1.0.0",
+  "name": "computer-science-learning-site",
+  "version": "2.0.0",
   "private": true,
-  "description": "منصة شبكة وعلوم — API + الموقع في فولدر واحد",
-  "main": "server.js",
+  "description": "شبكة وعلوم — منصة تعليم علوم الحاسب والشبكات (Firebase + Vercel)",
   "scripts": {
-    "start": "node server.js",
     "serve": "npx serve ."
   },
-  "dependencies": {
-    "bcryptjs": "^3.0.3",
-    "express": "^5.3.0",
-    "sql.js": "^1.15.0"
-  }
+  "keywords": [],
+  "author": "تصميم المهندس طه سلطان / タハ A3",
+  "license": "UNLICENSED"
 }

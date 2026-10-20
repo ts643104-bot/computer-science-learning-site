@@ -1,79 +1,107 @@
-# شبكة وعلوم — منصة تعليم علوم الحاسب والشبكات
+﻿# شبكة وعلوم — منصة تعليم علوم الحاسب والشبكات
 
 منصة تعليمية باللهجة المصرية تشرح علوم الحاسب والشبكات من الأساسيات لحد الاحتراف.
 
-- **الموقع:** https://ts643104-bot.github.io/computer-science-learning-site/index.html#/
+- **الموقع:** https://computer-science-learning-site.vercel.app/
 - **المستودع:** https://github.com/ts643104-bot/computer-science-learning-site/
-- **قناة واتساب:** https://whatsapp.com/channel/0029Vb7vDQeFSAt3D2GnJH0T
+- **قناة واتساب:** https://whatsapp.com/channel/029Vb7vDQeFSAt3D2GnJH0T
 - **الإيميل:** ts643104@gmail.com
 
 ---
 
 ## نظرة سريعة
 
-الموقع بيشتغل على **Google Sheets** كقاعدة بيانات، و**Google Apps Script** كـ API.
-
-**مفيش سيرفر خالص** — مفيش Node، مفيش استضافة، مفيش كروت بنكية. كله مجاني 100%.
+المشروع الآن يعتمد على **Firebase** (Firebase Auth + Cloud Firestore) بدلاً من Google Sheets / Apps Script.
 
 ```
-المتصفح  →  api-client.js  →  Apps Script Web App  →  Google Sheets
+المتصفح  →  api-client.js  →  Firebase SDK  →  Cloud Firestore
 ```
 
-### المكونات
+**الميزات:**
+
+- بيانات حقيقية ومركزية في Cloud Firestore.
+- مصادقة موحّدة عبر Firebase Auth (بريد/باسورد مشتق من رقم الهاتف).
+- قواعد أمن Firestore لتقييد الوصول.
+- لا سيرفر، لا SQLite، لا Apps Script. كله Static على Vercel + Firebase.
+
+---
+
+## المكوّنات
 
 | الملف | الوصف |
 |---|---|
-| `apps-script/Code.gs` | الـ Backend كامل (يُنسخ جوه Apps Script) |
-| `api-client.js` | طبقة الاتصال من الموقع |
-| `comments-widget.js` | ويدجت التقييم بالنجوم والتعليقات |
+| `firebase-config.js` | إعدادات Firebase (تحمّل أولاً كـ `<script>` عادي) |
+| `api-client.js` | طبقة التواصل مع Firebase (التسجيل، الدخول، التقدم، التعليقات، لوحة الأدمن) |
+| `login-app.js` | منطق شاشة تسجيل الدخول / إنشاء حساب الطلاب |
+| `admin-app.js` | منطق لوحة تحكم الأدمن مع نظام الحظر |
+| `login.html` | صفحة تسجيل الدخول للطلاب |
 | `admin.html` | لوحة تحكم الأدمن |
 | `index.html` | الموقع الرئيسي |
 
 ---
 
-## 🚀 الإعداد
+## الإعداد
 
-**مهم:** لازم تتبع الخطوات بنفسك في المتصفح (محتاجة حساب جوجل).
+### 1. أنشئ مشروع Firebase
 
-📖 **الدليل الكامل:** [`SETUP-APPS-SCRIPT.md`](./SETUP-APPS-SCRIPT.md)
+1. افتح [Firebase Console](https://console.firebase.google.com/).
+2. أنشئ مشروع (استخدم `computer-science-learning-site`).
+3. فعّل **Authentication** ← **Sign-in method** ← فعل `Email/Password`.
+4. فعّل **Firestore Database** وأنشئ قاعدة بيانات في وضع الاختبار (ثم انتقل للإنتاج).
+5. افتح **Project settings** ← **Your apps** ← أضف تطبيق ويب.
+6. انسخ إعدادات Firebase وضعها في `firebase-config.js`.
 
-### باختصار
+### 2. قواعد أمن Firestore
 
-1. افتح الشيت ← **Extensions** ← **Apps Script**
-2. الصق محتوى `apps-script/Code.gs` ← **Save**
-3. شغّل دالة **`setupSheets`** مرة واحدة (بتعمل الأوراق وحساب الأدمن)
-4. **Deploy** ← **New deployment** ← **Web app**
-   - Execute as: **Me**
-   - Who has access: **Anyone** ⚠️
-5. انسخ الـ `/exec` URL وحطه في `api-client.js`
+في **Firestore → Rules**، الصق القواعد التالية:
 
-> ⚠️ لو خليت **Who has access** مش `Anyone`، الموقع مش هيشتغل للطلاب.
+```javascript
+rules_version = '2';
+service cloud.firestore('databases/{database}/documents') {
+  match /databases/{database}/resources/users/{userId} {
+    allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+    allow create: if request.auth != null;
+    allow update, delete: if request.auth.uid == userId || isAdmin();
+  }
+
+  match /databases/{database}/resources/whitelist/{phone} {
+    allow read: if true;
+    allow create, update, delete: if isAdmin();
+  }
+
+  match /databases/{database}/resources/comments/{commentId} {
+    allow read: if true;
+    allow create: if request.auth != null || request.resource.data.uid == 'guest';
+  }
+
+  match /databases/{database}/resources/progress/{progressId} {
+    allow read, create, update, delete: if request.auth != null && resource.data.uid == request.auth.uid;
+  }
+
+  function isAdmin() {
+    return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+  }
+}
+```
+
+### 3. أنشئ حساب الأدمن الأول
+
+بعد ربط التطبيق بـ Firebase:
+
+1. افتح لوحة الأدمن (`admin.html`).
+2. سجّل الدخول بالواتساب وطلب تفعية الحساب الأول.
+3. استخدم **Firebase Console → Firestore → users** لتعديل حسابك:
+   - ضع `role: "admin"`.
+
+بديل: استخدم Firebase CLI لتشغيل سكريبت seed لإنشاء الأدمن.
 
 ---
 
-## 🖥️ تشغيل الموقع محليًا
+## المتطلبات
 
-عشان تجرّب الموقع على جهازك:
-
-```bash
-npx serve .
-```
-
-أو أي سيرفر ملفات ثابتة. الموقع محتاج يتفتح من `http://` مش `file://`.
-
----
-
-## 🗄️ سيرفر Node (اختياري / قديم)
-
-> **ملاحظة:** الملفات دي موجودة من النسخة القديمة. المشروع دلوقتي مش محتاجها.
-> سايبينها لو حبيت ترجع لسيرفر خاص في المستقبل.
-
-```bash
-npm install
-npm start
-```
-
-بيشتغل على **http://127.0.0.1:5178** وبيستخدم SQLite محلية.
+- حساب Firebase (مجاني على مستوى Spark).
+- رفع الملفات إلى Vercel أو أي CDN.
+- تحديث `firebase-config.js` بإعدادات مشروعك.
 
 ---
 
@@ -81,115 +109,28 @@ npm start
 
 | الرابط | الوصف |
 |---|---|
-| `/` | الموقع الرئيسي (الدروس والاختبارات) |
+| `/` | الموقع الرئيسي |
+| `/login.html` | تسجيل دخول الطلاب / إنشاء حساب |
 | `/admin.html` | لوحة تحكم الأدمن |
-
-### لوحة الأدمن
-
-فيها ٣ تبويبات:
-
-- **نظرة عامة** — إحصائيات (طلاب، أدمن، أرقام مسموحة، دروس مكتملة) + أعلى ٥ طلاب + آخر النشاط.
-- **الأرقام المسموحة** — إضافة أرقام (فردي أو جماعي)، تفعيل/إيقاف، حذف.
-- **المستخدمين** — عرض الكل، تعديل النقاط والباسورد والدور، حذف.
-
----
-
-## بنية المشروع
-
-```
-├── apps-script/
-│   └── Code.gs            # ⭐ الـ Backend كامل (يتنسخ جوه Apps Script)
-├── api-client.js          # ⭐ طبقة الاتصال بـ Apps Script
-├── comments-widget.js     # ⭐ ويدجت التقييم بالنجوم والتعليقات
-├── admin.html             # لوحة تحكم الأدمن
-├── index.html             # صفحة الموقع
-├── assets/                # ملفات الواجهة (CSS + JS المبنية)
-│
-│   ── سيرفر Node (اختياري / قديم) ──
-├── server.js              # API + خدمة ملفات الموقع
-├── db.js                  # قاعدة البيانات (SQLite عبر sql.js)
-├── auth.js                # تشفير الباسورد + الجلسات
-├── ratelimit.js           # حماية من محاولات الدخول المتكررة
-├── scoring.js             # قواعد النقاط
-├── seed.js                # إنشاء حساب الأدمن أول مرة
-└── routes/                # مسارات الـ API
-```
 
 ---
 
 ## الأمان
 
-- الباسوردات متشفّرة بـ **SHA-256** مع ملح (في Apps Script) أو **bcrypt** (في Node).
-- **التسجيل مقفول:** لازم رقمك يكون مضاف في قائمة الأرقام المسموحة الأول.
+- الباسوردات مُدارة عبر Firebase Auth (bcrypt على مستوى Firebase).
+- **التسجيل مقفول:** لازم رقمك يكون مضاف في مجموعة `whitelist` في Firestore أول.
 - الأدمن بس هو اللي يوصل لعمليات `admin*`.
-
-> ⚠️ **ملاحظة مهمة:** المفتاح السري (`API_KEY`) في `api-client.js` **ظاهر لأي حد**
-> بيفتح الـ Source. هو حماية بسيطة بس — **مش أمان حقي**.
-> وبما إن الشيت هو قاعدة البيانات، أي حد ليه صلاحية تعديل عليه يقدر يغيّر النقاط.
+- **نظام قفل الأدمن:** محاولتان فقط، أولاً يُغلق لمدة ٢٤ ساعة، ثانيته يُقفل بشكل دائم على الجهاز.
 
 ---
 
-## API
+## تشغيل الموقع محليًا
 
-كل الطلبات POST على رابط الـ Apps Script، والـ body JSON فيه `action`:
+```bash
+npx serve .
+```
 
-### عام
-
-| `action` | الوصف |
-|---|---|
-| `ping` | التأكد إن الـ API شغّال |
-| `checkPhone` | هل الرقم مسموح ومتاح؟ |
-| `register` | تسجيل حساب جديد |
-| `login` | تسجيل الدخول |
-| `me` | بياناتي + تقدمي |
-
-### تقدم الطالب
-
-| `action` | الوصف |
-|---|---|
-| `updateScore` | تحديث النقاط |
-| `completeLesson` | إكمال درس |
-| `quiz` | إرسال نتيجة اختبار |
-| `getProgress` | تقدمي في الدروس |
-
-### التعليقات والتقييمات ⭐
-
-| `action` | الوصف |
-|---|---|
-| `addComment` | إضافة تعليق + تقييم بالنجوم (1-5) |
-| `getComments` | قراءة تعليقات درس (+ ملخص التقييم) |
-
-### أدمن
-
-| `action` | الوصف |
-|---|---|
-| `adminOverview` | إحصائيات عامة |
-| `getWhitelist` | كل الأرقام المسموحة |
-| `addToWhitelist` | إضافة أرقام |
-| `toggleWhitelist` | تفعيل/إيقاف رقم |
-| `deleteWhitelist` | حذف رقم |
-| `getUsers` | كل المستخدمين |
-| `updateUser` | تعديل مستخدم |
-| `deleteUser` | حذف مستخدم |
-
-**تفاصيل ترتيب الأعمدة في الشيت:** [`SETUP-APPS-SCRIPT.md`](./SETUP-APPS-SCRIPT.md)
-
----
-
-## ملاحظات تقنية
-
-- **الفوتر:** أيقونات التواصل (بريد / GitHub / واتساب) بتفتح الروابط الرسمية.
-- **زر "شارك الدرس":** بيبعت عنوان الدرس + رابط الموقع على واتساب.
-- ملفات `assets/` هي **build مضغوط** — لو عندك السورس الأصلي، عدّل فيه وأعد البناء
-  بدل التعديل المباشر على الملف المضغوط.
-- **CORS:** `api-client.js` بيبعت `Content-Type: text/plain` عشان يتجنّب
-  الـ preflight — ده الحل المعتاد لمشاكل CORS مع Apps Script.
-
----
-
-## الترخيص
-
-مشروع تعليمي خاص.
+الموقع يعمل من `http://` لا `file://` بسب ES Modules.
 
 ---
 
