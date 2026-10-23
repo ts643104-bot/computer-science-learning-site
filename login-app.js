@@ -2,6 +2,7 @@ import { auth, db } from "./firebase-config.js"
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  signOut,
   onAuthStateChanged,
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"
 import {
@@ -149,6 +150,7 @@ const handleRegister = async (email, password) => {
   })
 
   showMsg("تم إرسال طلبك. حسابك يحتاج موافقة الأدمن قبل الدخول.", "ok")
+  await signOut(auth)
   setTimeout(() => {
     window.location.href = "./index.html"
   }, 2000)
