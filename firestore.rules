@@ -1,0 +1,67 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function ownUser() {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    match /users/{userId} {
+      allow read: if ownUser() || isAdmin();
+      allow create: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.get('role', 'student') == 'student'
+        && request.resource.data.get('score', 0) == 0;
+      allow update: if isAdmin()
+        || (ownUser()
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['lastLogin', 'score', 'username']));
+      allow delete: if isAdmin();
+    }
+
+    match /whitelist/{email} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /pending_requests/{email} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.get('email', '') == email;
+      allow update: if signedIn()
+        && resource.data.get('email', '') == email;
+      allow delete: if isAdmin();
+    }
+
+    match /progress/{progressId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5
+        && request.resource.data.comment.size() <= 40;
+      allow update, delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

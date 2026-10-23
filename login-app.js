@@ -1,153 +1,185 @@
-import './api-client.js'
+import { auth, db } from "./firebase-config.js"
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"
+import {
+  doc,
+  getDoc,
+  setDoc,
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
 
 const $ = (id) => document.getElementById(id)
 
-const WHATSAPP_PART_A = '20'
-const WHATSAPP_PART_B = '1'
-const WHATSAPP_PART_C = '140971703'
-const WHATSAPP_URL = `https://wa.me/${WHATSAPP_PART_A}${WHATSAPP_PART_B}${WHATSAPP_PART_C}`
-
-const notify = (el, text, kind = 'ok') => {
+const notify = (el, text, kind = "ok") => {
+  if (!text) {
+    el.className = "lg-msg"
+    el.textContent = ""
+    return
+  }
   el.textContent = text
-  el.className = `lg-msg on ${kind === 'err' ? 'err' : 'ok'}`
-  if (text) setTimeout(() => (el.className = 'lg-msg'), 50)
+  el.className = `lg-msg on ${kind === "err" ? "err" : "ok"}`
 }
 
-const showMsg = (text, kind = 'ok') => notify($('formMsg'), text, kind)
+const showMsg = (text, kind = "ok") => notify($("formMsg"), text, kind)
 
-const toggleField = (show) => {
-  $('userField').classList.toggle('lg-hidden', !show)
-  $('submitBtn').textContent = show ? 'إنشاء حساب' : 'تسجيل الدخول'
+let mode = "login"
+
+const setMode = (next) => {
+  mode = next
+  $("tabLogin").classList.toggle("on", mode === "login")
+  $("tabRegister").classList.toggle("on", mode === "register")
+  $("modeHelp").textContent =
+    mode === "register"
+      ? "أنشئ حسابك بالبريد الإلكتروني وكلمة المرور. بعد التسجيل، حسابك يحتاج موافقة الأدمن قبل الدخول."
+      : "اكتب بريدك الإلكتروني وكلمة المرور للدخول. لو مش مسجّل قبل كده، أنشئ حساب جديد وطلبك هيتم مراجعته من الأدمن."
+  $("submitBtn").textContent = mode === "register" ? "إرسال طلب الحساب" : "دخول"
+  showMsg("")
 }
 
-const renderContactPrompt = (reason) => {
-  const wrap = $('contactPrompt')
-  if (!wrap) return
-  const existing = wrap.querySelector('.lg-whatsapp-row')
-  if (existing) existing.remove()
+$("tabLogin").addEventListener("click", () => setMode("login"))
+$("tabRegister").addEventListener("click", () => setMode("register"))
 
-  const row = document.createElement('div')
-  row.className = 'lg-whatsapp-row'
-  row.innerHTML = `
-    <div class="lg-msg err" style="margin-bottom:0.5rem">${reason || 'الرقم ده مش مسموح له بالدخول بعد.'}</div>
-    <a class="lg-contact-link" href="${WHATSAPP_URL}" target="_blank" rel="noopener noreferrer">💬 طلب تفعيل الحساب عبر واتساب</a>
-  `
-  wrap.prepend(row)
+const setLoading = (loading, mode) => {
+  const btn = $("submitBtn")
+  btn.disabled = loading
+  btn.textContent = loading ? "جاري الإرسال…" : mode === "register" ? "إرسال طلب الحساب" : "دخول"
 }
 
-const hideContactPrompt = () => {
-  const existing = document.querySelector('.lg-whatsapp-row')
-  if (existing) existing.remove()
+const checkWhitelist = async (email) => {
+  const snap = await getDoc(doc(db, "whitelist", email))
+  if (!snap.exists()) return { allowed: false }
+  const data = snap.data()
+  return { allowed: data.isActive !== false, entry: data }
 }
 
-const checkPhoneOnInput = async (phone) => {
-  hideContactPrompt()
-  if (!phone || phone.trim().length < 10) return
+const checkPending = async (email) => {
+  const snap = await getDoc(doc(db, "pending_requests", email))
+  return snap.exists()
+}
 
-  try {
-    const result = await window.Api.checkPhone(phone)
-    if (!result.valid) {
-      showMsg('رقم غير صحيح', 'err')
-      return
-    }
-    if (!result.allowed) {
-      renderContactPrompt('الرقم ده مش مسموح له. اطلب تفعيله عبر الواتساب.')
-    }
-  } catch (err) {
-    renderContactPrompt('حصلت مشكلة أثناء فحص الرقم. جرب تاني أو تواصل على واتساب.')
+const setStudentRole = async (uid, email) => {
+  const userRef = doc(db, "users", uid)
+  const snap = await getDoc(userRef)
+  if (!snap.exists()) {
+    await setDoc(userRef, {
+      email,
+      username: email.split("@")[0],
+      role: "student",
+      score: 0,
+      createdAt: new Date().toISOString(),
+    })
   }
 }
 
-const submitLogin = async (phone, password) => {
-  hideContactPrompt()
-  try {
-    const data = await window.Api.login(phone, password)
-    if (data.user && data.user.role === 'admin') {
-      await window.Api.logout()
-      showMsg('هذا حساب أدمن، استخدم لوحة الأدمن.', 'err')
-      return
-    }
-    window.location.href = './index.html'
-  } catch (err) {
-    showMsg(err.message || 'الرقم أو الباسورد غلط', 'err')
-    if (err.code === 'NOT_WHITELISTED' || err.code === 'BAD_CREDENTIALS') {
-      renderContactPrompt('الرجاء تفعيل الحساب أولاً عبر واتساب.')
-    }
-  }
+const authError = (err) => {
+  const code = err && err.code
+  if (code === "auth/invalid-email") return "البريد الإلكتروني غير صحيح"
+  if (code === "auth/missing-password") return "اكتب كلمة المرور"
+  if (code === "auth/weak-password") return "كلمة المرور لازم ٦ حروف على الأقل"
+  if (code === "auth/email-already-in-use") return "البريد ده مسجّل بالفعل — استخدم زر دخول"
+  if (code === "auth/invalid-credential" || code === "auth/user-not-found" || code === "auth/wrong-password")
+    return "البريد الإلكتروني أو كلمة المرور غلط"
+  if (code === "auth/too-many-requests") return "كثرت المحاولات، جرّب بعد شوية"
+  if (code === "auth/network-request-failed") return "مش قادر أوصل للإنترنت"
+  return "حصلت مشكلة. جرب تاني."
 }
 
-const submitRegister = async (phone, username, password) => {
-  hideContactPrompt()
+const handleLogin = async (email, password) => {
+  let credential
   try {
-    const data = await window.Api.register(phone, username, password)
-    if (data && data.user && data.user.role === 'admin') {
-      await window.Api.logout()
-      showMsg('هذا الحساب أدمن، لا يمكن إنشاؤه كطالب.', 'err')
-      return
-    }
-    window.location.href = './index.html'
+    credential = await signInWithEmailAndPassword(auth, email, password)
   } catch (err) {
-    showMsg(err.message || 'فشل التسجيل', 'err')
-    if (err.code === 'NOT_WHITELISTED') {
-      renderContactPrompt(err.message)
-    } else if (err.code === 'PHONE_TAKEN' || err.code === 'BAD_CREDENTIALS') {
-      renderContactPrompt('لديك حساب؟ سجّل الدخول بدلاً من إنشاء حساب جديد.')
-    } else {
-      renderContactPrompt('تواصل مع الأدمن على واتساب لتفعيل الحساب.')
-    }
-  }
-}
-
-$('tabLogin').addEventListener('click', () => {
-  $('tabLogin').classList.add('on')
-  $('tabRegister').classList.remove('on')
-  toggleField(false)
-})
-
-$('tabRegister').addEventListener('click', () => {
-  $('tabRegister').classList.add('on')
-  $('tabLogin').classList.remove('on')
-  toggleField(true)
-})
-
-$('phone').addEventListener('input', () => {
-  clearTimeout($('phone')._checkTimer)
-  $('phone')._checkTimer = setTimeout(() => {
-    checkPhoneOnInput($('phone').value.trim())
-  }, 50)
-})
-
-$('authForm').addEventListener('submit', async (event) => {
-  event.preventDefault()
-  const phone = $('phone').value.trim()
-  const username = $('username').value.trim()
-  const password = $('password').value
-
-  if (!phone) {
-    showMsg('اكتب رقم الموبايل', 'err')
+    showMsg(authError(err), "err")
     return
   }
 
-  hideContactPrompt()
+  const emailLower = email.toLowerCase().trim()
+  const wl = await checkWhitelist(emailLower)
 
-  const isRegister = $('tabRegister').classList.contains('on')
-
-  try {
-    if (isRegister) {
-      await submitRegister(phone, username, password)
-    } else {
-      await submitLogin(phone, password)
-    }
-  } catch (err) {
-    showMsg(err.message || 'حصل خطأ، جرّب تاني.', 'err')
+  if (!wl.allowed) {
+    await setDoc(
+      doc(db, "pending_requests", emailLower),
+      {
+        email: emailLower,
+        status: "pending",
+        requestedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    )
+    showMsg("طلبك قيد المراجعة والموافقة من الأدمن.", "err")
+    return
   }
+
+  await setStudentRole(credential.user.uid, emailLower)
+  showMsg("تم الدخول بنجاح، جاري تحويلك للموقع…", "ok")
+  setTimeout(() => {
+    window.location.href = "./index.html"
+  }, 1200)
+}
+
+const handleRegister = async (email, password) => {
+  const emailLower = email.toLowerCase().trim()
+
+  const wl = await checkWhitelist(emailLower)
+  if (wl.allowed) {
+    showMsg("البريد ده مفعّل بالفعل — استخدم زر دخول.", "err")
+    return
+  }
+
+  if (await checkPending(emailLower)) {
+    showMsg("طلبك قيد المراجعة بالفعل وموافق عليه من الأدمن.", "err")
+    return
+  }
+
+  let credential
+  try {
+    credential = await createUserWithEmailAndPassword(auth, emailLower, password)
+  } catch (err) {
+    showMsg(authError(err), "err")
+    return
+  }
+
+  await setDoc(doc(db, "pending_requests", emailLower), {
+    email: emailLower,
+    uid: credential.user.uid,
+    status: "pending",
+    requestedAt: new Date().toISOString(),
+  })
+
+  showMsg("تم إرسال طلبك. حسابك يحتاج موافقة الأدمن قبل الدخول.", "ok")
+  setTimeout(() => {
+    window.location.href = "./index.html"
+  }, 2000)
+}
+
+$("authForm").addEventListener("submit", (event) => {
+  event.preventDefault()
+  const email = $("email").value.trim()
+  const password = $("password").value
+  if (!email || !password) {
+    showMsg("اكتب البريد الإلكتروني وكلمة المرور", "err")
+    return
+  }
+  setLoading(true, mode)
+  const run = mode === "register" ? handleRegister : handleLogin
+  run(email, password).finally(() => setLoading(false, mode))
 })
 
+const checkExistingSession = async () => {
+  return new Promise((resolve) => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      unsub()
+      resolve(user)
+    })
+  })
+}
+
 const init = async () => {
-  toggleField(false)
-  const user = await window.Api.me().then((d) => d.user).catch(() => null)
+  const user = await checkExistingSession()
   if (user) {
-    window.location.href = './index.html'
+    window.location.href = "./index.html"
   }
 }
 

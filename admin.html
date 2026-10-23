@@ -1,611 +1,138 @@
 ﻿<!doctype html>
 <html lang="ar" dir="rtl">
-
 <head>
- <meta charset="UTF-8" />
- <meta name="viewport" content="width=device-width, initial-scale=1.0" />
- <meta name="theme-color" content="#070C17" />
- <meta name="robots" content="noindex, nofollow" />
- <title>لوحة تحكم الأدمن | شبكة وعلوم</title>
- <link rel="preconnect" href="https://fonts.googleapis.com" />
- <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
- <link
-    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@30;40;50;60;70&family=JetBrains+Mono:wght@40;50;70&display=swap"
-    rel="stylesheet"
-  />
- <link rel="stylesheet" href="./assets/index-BUb9AD-X.css" />
- <style>
-    .ad-shell {
-      position: relative;
-      min-height: 10vh;
-      padding-block: 2rem 4rem;
-      overflow-x: hidden;
-    }
-    .ad-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      flex-wrap: wrap;
-      margin-bottom: 1.75rem;
-    }
-    .ad-brand {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-    .ad-logo {
-      width: 46px;
-      height: 46px;
-      border-radius: 14px;
-      display: grid;
-      place-items: center;
-      font-size: 1.3rem;
-      background: linear-gradient(135deg, #2c5e, #38bdf8);
-      color: #04160b;
-      box-shadow: 0 8px 24px rgba(34, 197, 94, 0.35);
-    }
-    .ad-title {
-      font-size: 1.35rem;
-      font-weight: 70;
-      line-height: 1.25;
-    }
-    .ad-sub {
-      font-size: 0.78rem;
-      color: var(--text-muted);
-    }
-    .ad-stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 0.9rem;
-      margin-bottom: 1.75rem;
-    }
-    .ad-stat {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      padding: 1rem 1.15rem;
-    }
-    .ad-stat .n {
-      font-size: 1.7rem;
-      font-weight: 70;
-      color: #fff;
-      font-family: 'JetBrains Mono', monospace;
-    }
-    .ad-stat .l {
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      margin-top: 0.15rem;
-    }
-    .ad-stat.g .n {
-      color: #86efac;
-    }
-    .ad-stat.s .n {
-      color: #7dd3fc;
-    }
-    .ad-stat.a .n {
-      color: #fcd34d;
-    }
-    .ad-tabs {
-      display: flex;
-      gap: 0.4rem;
-      flex-wrap: wrap;
-      margin-bottom: 1.5rem;
-      border-bottom: 1px solid var(--line);
-      padding-bottom: 0.75rem;
-    }
-    .ad-tab {
-      padding: 0.5rem 1.1rem;
-      border-radius: 9px;
-      font-size: 0.8rem;
-      font-weight: 60;
-      border: 1px solid transparent;
-      color: var(--text-muted);
-      cursor: pointer;
-      background: transparent;
-      transition: all 0.18s ease;
-    }
-    .ad-tab:hover {
-      color: var(--text);
-      background: #ffffff0a;
-    }
-    .ad-tab.on {
-      background: #2c5e1f;
-      border-color: #2c5e4d;
-      color: #86efac;
-    }
-    .ad-panel {
-      display: none;
-    }
-    .ad-panel.on {
-      display: block;
-      animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .ad-grid2 {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 1.25rem;
-    }
-    @media (min-width: 90px) {
-      .ad-grid2 {
-        grid-template-columns: 1.15fr 0.85fr;
-      }
-    }
-    .ad-card {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      padding: 1.35rem;
-    }
-    .ad-card h3 {
-      font-size: 1.02rem;
-      font-weight: 70;
-      margin: 0 0 0.9rem;
-      color: #fff;
-    }
-    .ad-field {
-      display: flex;
-      flex-direction: column;
-      gap: 0.35rem;
-      margin-bottom: 0.9rem;
-    }
-    .ad-field label {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      font-weight: 60;
-    }
-    .ad-input,
-    .ad-textarea {
-      width: 10%;
-      background: #070c17;
-      border: 1px solid var(--line-strong);
-      border-radius: 12px;
-      padding: 0.7rem 0.9rem;
-      color: var(--text);
-      font-family: inherit;
-      font-size: 0.92rem;
-      outline: none;
-      transition: border-color 0.18s ease, box-shadow 0.18s ease;
-    }
-    .ad-textarea {
-      min-height: 10px;
-      resize: vertical;
-      font-family: 'JetBrains Mono', monospace;
-      direction: ltr;
-      text-align: left;
-    }
-    .ad-input:focus,
-    .ad-textarea:focus {
-      border-color: #2c5e9;
-      box-shadow: 0 0 0 3px #2c5e26;
-    }
-    .ad-row {
-      display: flex;
-      gap: 0.6rem;
-      flex-wrap: wrap;
-    }
-    .ad-row>* {
-      flex: 1 1 180px;
-    }
-    .ad-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.4rem;
-      padding: 0.65rem 1.25rem;
-      border-radius: 9px;
-      font-size: 0.9rem;
-      font-weight: 60;
-      cursor: pointer;
-      border: 1px solid transparent;
-      white-space: nowrap;
-      transition: all 0.18s ease;
-    }
-    .ad-btn-p {
-      background: linear-gradient(135deg, #2c5e, #4ade80);
-      color: #04160b;
-      box-shadow: 0 8px 24px #2c5e47;
-    }
-    .ad-btn-p:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 30px #2c5e6b;
-    }
-    .ad-btn-g {
-      border-color: var(--line-strong);
-      color: var(--text);
-      background: #ffffff05;
-    }
-    .ad-btn-g:hover {
-      background: #ffffff12;
-    }
-    .ad-btn-d {
-      border-color: #ef480;
-      color: #fca5a5;
-      background: #ef41a;
-    }
-    .ad-btn-d:hover {
-      background: #ef42e;
-    }
-    .ad-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none;
-    }
-    .ad-table-wrap {
-      overflow-x: auto;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-    }
-    .ad-table {
-      width: 10%;
-      border-collapse: collapse;
-      font-size: 0.8rem;
-      min-width: 560px;
-    }
-    .ad-table th {
-      background: #2c5e1a;
-      color: #86efac;
-      font-weight: 60;
-      text-align: right;
-      padding: 0.7rem 0.9rem;
-      white-space: nowrap;
-    }
-    .ad-table td {
-      padding: 0.65rem 0.9rem;
-      border-top: 1px solid var(--line);
-      color: #cbd5e1;
-      vertical-align: middle;
-    }
-    .ad-table tbody tr:hover td {
-      background: #ffffff06;
-    }
-    .ad-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-      font-size: 0.7rem;
-      font-weight: 60;
-      padding: 0.18rem 0.6rem;
-      border-radius: 9px;
-      border: 1px solid var(--line);
-      background: #94a3b814;
-      color: var(--text-muted);
-    }
-    .ad-pill.g {
-      background: #2c5e21;
-      border-color: #2c5e4d;
-      color: #86efac;
-    }
-    .ad-pill.r {
-      background: #ef41f;
-      border-color: #ef4d;
-      color: #fca5a5;
-    }
-    .ad-pill.a {
-      background: #fcd34d21;
-      border-color: #fcd34d4d;
-      color: #fcd34d;
-    }
-    .ad-empty {
-      text-align: center;
-      color: var(--text-muted);
-      padding: 2rem 1rem;
-      font-size: 0.9rem;
-    }
-    .ad-msg {
-      border-radius: 12px;
-      padding: 0.65rem 1rem;
-      font-size: 0.8rem;
-      margin-bottom: 1rem;
-      display: none;
-    }
-    .ad-msg.on {
-      display: block;
-    }
-    .ad-msg.ok {
-      background: #2c5e1a;
-      border: 1px solid #2c5e4d;
-      color: #86efac;
-    }
-    .ad-msg.err {
-      background: #ef41a;
-      border: 1px solid #ef4d;
-      color: #fca5a5;
-    }
-    .ad-login {
-      max-width: 40px;
-      margin: 8vh auto 0;
-    }
-    .ad-mono {
-      font-family: 'JetBrains Mono', monospace;
-      direction: ltr;
-    }
-    .ad-actions {
-      display: flex;
-      gap: 0.35rem;
-      flex-wrap: wrap;
-    }
-    .ad-mini {
-      font-size: 0.75rem;
-      padding: 0.3rem 0.7rem;
-      border-radius: 8px;
-      border: 1px solid var(--line-strong);
-      background: #ffffff05;
-      color: var(--text-muted);
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-    .ad-mini:hover {
-      color: var(--text);
-      background: #ffffff12;
-    }
-    .ad-mini.d {
-      border-color: #ef4d;
-      color: #fca5a5;
-    }
-    .ad-mini.d:hover {
-      background: #ef42e;
-    }
-    .ad-hidden {
-      display: none !important;
-    }
-    .ad-perm-lock {
-      text-align: center;
-      padding: 3rem 1.5rem;
-    }
-    .ad-perm-lock .icon {
-      font-size: 3rem;
-      margin-bottom: 1rem;
-    }
-    .ad-perm-lock p {
-      color: #fca5a5;
-      font-size: 1.05rem;
-      line-height: 1.7;
-      margin-bottom: 0.5rem;
-    }
-    .ad-foot {
-      text-align: center;
-      color: var(--text-dim);
-      font-size: 0.78rem;
-      margin-top: 2.5rem;
-    }
-    .ad-badge-admin {
-      background: linear-gradient(135deg, #2c5e, #38bdf8);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      font-weight: 70;
-    }
- </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>لوحة تحكم الأدمن</title>
+  <link rel="stylesheet" href="admin.css">
 </head>
-
 <body>
- <div class="glow-top"></div>
+  <div class="ad-shell">
 
- <div id="permLockView" class="ad-shell ad-hidden">
-    <div class="ad-login glass ad-perm-lock">
-      <div class="icon">🔒</div>
-      <div class="ad-title">لوحة التحكم مقفولة</div>
-      <div class="ad-sub" style="margin-top: 1.25rem">
-        <p>تم قفل هذه الصفحة بشكل دائم على هذا الجهاز.</p>
-        <p>تم تجاوز الحد الأقصر لمحاولات تسجيل الدخول الخاطئة.</p>
-        <p>لوصول، استخدم جهازًا آخر أو اتصل بالمطور.</p>
-        <p style="margin-top: 2rem">— تصميم المهندس طه سلطان / タハ A3</p>
-      </div>
-    </div>
- </div>
-
- <div id="loginView" class="ad-shell">
-    <div class="wrap">
-      <div class="ad-login glass">
-        <div class="ad-brand" style="justify-content: center; margin-bottom: 1.25rem">
-          <div class="ad-logo">🛡️</div>
-          <div>
-            <div class="ad-title">لوحة الأدمن</div>
-            <div class="ad-sub">دخول خاص بالمشرفين فقط</div>
-          </div>
+    <section id="loginView" class="ad-auth">
+      <div class="ad-card">
+        <div class="ad-logo">
+          <span class="ad-logo-mark">A3</span>
+          <h1>لوحة الأدمن</h1>
+          <p>دخول محمي — 3 محاولات كحد أقصى قبل القفل 24 ساعة</p>
         </div>
 
-        <div id="loginMsg" class="ad-msg"></div>
+        <form id="loginForm" class="ad-form" autocomplete="off">
+          <label class="ad-field">
+            <span>البريد الإلكتروني</span>
+            <input type="email" id="email" placeholder="admin@site.com" required>
+          </label>
+          <label class="ad-field">
+            <span>كلمة السر</span>
+            <input type="password" id="password" placeholder="••••••••" required>
+          </label>
 
-        <form id="loginForm">
-          <div class="ad-field">
-            <label for="phone">رقم الموبايل</label>
-            <input class="ad-input ad-mono" id="phone" type="tel" inputmode="tel" placeholder="01xxxxxxxxx"
-              autocomplete="username" required />
-          </div>
-          <div class="ad-field">
-            <label for="password">الباسورد</label>
-            <input class="ad-input" id="password" type="password" placeholder="••"
-              autocomplete="current-password" required />
-          </div>
-          <button class="ad-btn ad-btn-p" style="width: 10%" type="submit" id="loginBtn">
-            دخول للوحة التحكم
-          </button>
+          <div id="loginMsg" class="ad-msg"></div>
+
+          <button type="submit" id="loginBtn" class="ad-primary">دخول للوحة التحكم</button>
         </form>
 
-        <p style="text-align: center; margin-top: 1.25rem; font-size: 0.8rem">
-          <a class="text-slate-40 hover:text-slate-20" href="./index.html">رجوع للموقع</a>
-        </p>
+        <div class="ad-foot">تصميم المهندس طه سلطان / タハ A3</div>
       </div>
-    </div>
- </div>
+    </section>
 
- <div id="panelView" class="ad-shell ad-hidden">
-    <div class="wrap">
-      <div class="ad-head">
-        <div class="ad-brand">
-          <div class="ad-logo">🛡️</div>
-          <div>
-            <div class="ad-title">
-              لوحة تحكم <span class="ad-badge-admin">الأدمن</span>
-            </div>
-            <div class="ad-sub" id="whoAmI">—</div>
-          </div>
+    <section id="bootstrapView" class="ad-auth ad-hidden">
+      <div class="ad-card">
+        <div class="ad-logo">
+          <span class="ad-logo-mark boot">+</span>
+          <h1>إعداد أول أدمن</h1>
+          <p>مفيش أي حساب أدمن في النظام — أنشئ واحد دلوقتي</p>
         </div>
-        <div class="ad-actions">
-          <a class="ad-btn ad-btn-g" href="./index.html">الموقع الرئيسي</a>
-          <button class="ad-btn ad-btn-d" id="logoutBtn">تسجيل خروج</button>
-        </div>
+
+        <form id="bootstrapForm" class="ad-form" autocomplete="off">
+          <label class="ad-field">
+            <span>البريد الإلكتروني</span>
+            <input type="email" id="bootstrapEmail" placeholder="admin@site.com" required>
+          </label>
+          <label class="ad-field">
+            <span>الباسورد (6 حروف على الأقل)</span>
+            <input type="password" id="bootstrapPassword" placeholder="••••••••" required minlength="6">
+          </label>
+
+          <div id="bootstrapMsg" class="ad-msg"></div>
+
+          <button type="submit" id="bootstrapBtn" class="ad-primary">إنشاء حساب الأدمن</button>
+          <button type="button" id="bootstrapCancel" class="ad-ghost">رجوع لشاشة الدخول</button>
+        </form>
+
+        <div class="ad-foot">تصميم المهندس طه سلطان / タハ A3</div>
       </div>
+    </section>
 
-      <div id="panelMsg" class="ad-msg"></div>
+    <section id="panelView" class="ad-panel-shell ad-hidden">
+      <header class="ad-bar">
+        <div class="ad-bar-brand">
+          <span class="ad-logo-mark sm">A3</span>
+          <strong>لوحة الأدمن</strong>
+        </div>
+        <div class="ad-bar-user">
+          <span id="whoAmI" class="ad-who">—</span>
+          <button id="logoutBtn" class="ad-ghost">خروج</button>
+        </div>
+      </header>
 
-      <div class="ad-stats">
-        <div class="ad-stat g">
-          <div class="n" id="stStudents">0</div>
-          <div class="l">طالب مسجّل</div>
-        </div>
-        <div class="ad-stat s">
-          <div class="n" id="stAdmins">0</div>
-          <div class="l">أدمن</div>
-        </div>
-        <div class="ad-stat a">
-          <div class="n" id="stWhitelist">0</div>
-          <div class="l">رقم مسموح</div>
-        </div>
-        <div class="ad-stat">
-          <div class="n" id="stPending">0</div>
-          <div class="l">مسموح ولم يسجّل</div>
-        </div>
-        <div class="ad-stat s">
-          <div class="n" id="stCompletions">0</div>
-          <div class="l">درس مكتمل</div>
-        </div>
-        <div class="ad-stat">
-          <div class="n" id="stAttempts">0</div>
-          <div class="l">محاولة اختبار</div>
-        </div>
-      </div>
-
-      <div class="ad-tabs">
+      <nav class="ad-tabs">
         <button class="ad-tab on" data-tab="overview">نظرة عامة</button>
-        <button class="ad-tab" data-tab="whitelist">الأرقام المسموحة</button>
-        <button class="ad-tab" data-tab="users">المستخدمين</button>
-      </div>
+        <button class="ad-tab" data-tab="pending">الطلبات المعلقة <span id="pendingTabCount" class="ad-badge zero">0</span></button>
+        <button class="ad-tab" data-tab="whitelist">الـ Whitelist <span id="wlCount" class="ad-badge">0</span></button>
+        <button class="ad-tab" data-tab="users">المستخدمون <span id="usCount" class="ad-badge">0</span></button>
+      </nav>
 
-      <div class="ad-panel on" id="tab-overview">
-        <div class="ad-grid2">
-          <div class="ad-card">
-            <h3>🏆 أعلى 5 طلاب</h3>
-            <div class="ad-table-wrap">
-              <table class="ad-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>الاسم</th>
-                    <th>النقاط</th>
-                  </tr>
-                </thead>
-                <tbody id="topBody">
-                  <tr>
-                    <td colspan="3" class="ad-empty">لا يوجد طلاب لسه</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+      <div id="panelMsg" class="ad-msg global"></div>
 
-          <div class="ad-card">
-            <h3>🕒 أحدث إنجازات الدروس</h3>
-            <div class="ad-table-wrap">
-              <table class="ad-table">
-                <thead>
-                  <tr>
-                    <th>الطالب</th>
-                    <th>الدرس</th>
-                    <th>الوقت</th>
-                  </tr>
-                </thead>
-                <tbody id="recentBody">
-                  <tr>
-                    <td colspan="3" class="ad-empty">لا يوجد نشاط لسه</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+      <section id="tab-overview" class="ad-panel on">
+        <div class="ad-stats">
+          <div class="ad-stat"><span>الطلاب</span><b id="stStudents">0</b></div>
+          <div class="ad-stat"><span>الأدمن</span><b id="stAdmins">0</b></div>
+          <div class="ad-stat"><span>مسموحين</span><b id="stWhitelist">0</b></div>
+          <div class="ad-stat"><span>معلقين</span><b id="stPending">0</b></div>
+          <div class="ad-stat"><span>إكمالات</span><b id="stCompletions">0</b></div>
         </div>
-      </div>
+      </section>
 
-      <div class="ad-panel" id="tab-whitelist">
-        <div class="ad-grid2">
-          <div class="ad-card">
-            <h3>➕ إضافة أرقام مسموحة</h3>
-            <div class="ad-field">
-              <label for="wlPhones">الرقم / الأرقام (كل رقم في سطر أو مفصول بفاصلة)</label>
-              <textarea class="ad-textarea" id="wlPhones" placeholder="01012345678&#10;01098765432"></textarea>
-            </div>
-            <div class="ad-row">
-              <div class="ad-field">
-                <label for="wlLabel">وصف (اختياري)</label>
-                <input class="ad-input" id="wlLabel" placeholder="مثال: دفعة أكتوبر" />
-              </div>
-              <div class="ad-field">
-                <label>&nbsp;</label>
-                <button class="ad-btn ad-btn-p" id="wlAddBtn">إضافة الأرقام</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="ad-card">
-            <h3>📋 قائمة الأرقام (<span id="wlCount">0</span>)</h3>
-            <div class="ad-table-wrap">
-              <table class="ad-table">
-                <thead>
-                  <tr>
-                    <th>الرقم</th>
-                    <th>الحالة</th>
-                    <th>مستخدم</th>
-                    <th>إجراء</th>
-                  </tr>
-                </thead>
-                <tbody id="wlBody">
-                  <tr>
-                    <td colspan="4" class="ad-empty">جاري التحميل…</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+      <section id="tab-pending" class="ad-panel">
+        <div class="ad-card-wrap">
+          <table class="ad-table">
+            <thead><tr><th>الاسم</th><th>البريد الإلكتروني</th><th>وقت الطلب</th><th>إجراء</th></tr></thead>
+            <tbody id="pendingBody"><tr><td colspan="4" class="ad-empty">لا يوجد طلبات معلقة</td></tr></tbody>
+          </table>
         </div>
-      </div>
+      </section>
 
-      <div class="ad-panel" id="tab-users">
-        <div class="ad-card">
-          <h3>👥 كل المستخدمين (<span id="usCount">0</span>)</h3>
-          <div class="ad-table-wrap">
-            <table class="ad-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>الاسم</th>
-                  <th>الرقم</th>
-                  <th>الرتبة</th>
-                  <th>النقاط</th>
-                  <th>دروس</th>
-                  <th>اختبارات</th>
-                  <th>الدور</th>
-                  <th>إجراء</th>
-                </tr>
-              </thead>
-              <tbody id="usBody">
-                <tr>
-                  <td colspan="9" class="ad-empty">جاري التحميل…</td>
-                </tr>
-              </tbody>
-            </table>
+      <section id="tab-whitelist" class="ad-panel">
+        <div class="ad-card-wrap">
+          <div class="ad-add">
+            <input id="wlEmails" type="text" placeholder="إيميلات مفصولة بفواصل أو مسافات">
+            <input id="wlLabel" type="text" placeholder="اسم الطالب (اختياري)">
+            <button id="wlAddBtn" class="ad-primary sm">إضافة</button>
           </div>
+          <table class="ad-table">
+            <thead><tr><th>البريد الإلكتروني</th><th>الحالة</th><th>المالك</th><th>إجراء</th></tr></thead>
+            <tbody id="wlBody"><tr><td colspan="4" class="ad-empty">لا يوجد إيميلات مسموحة لسه</td></tr></tbody>
+          </table>
         </div>
-      </div>
+      </section>
 
-      <div class="ad-foot">تصميم المهندس طه سلطان / タハ A3</div>
-    </div>
- </div>
+      <section id="tab-users" class="ad-panel">
+        <div class="ad-card-wrap">
+          <table class="ad-table">
+            <thead><tr><th>#</th><th>الاسم</th><th>البريد الإلكتروني</th><th>الرتبة</th><th>النقاط</th><th>الدور</th><th>إجراء</th></tr></thead>
+            <tbody id="usBody"><tr><td colspan="7" class="ad-empty">لا يوجد مستخدمين لسه</td></tr></tbody>
+          </table>
+        </div>
+      </section>
 
- <script src="./firebase-config.js"></script>
- <script type="module" src="./admin-app.js"></script>
+      <footer class="ad-shell-foot">تصميم المهندس طه سلطان / タハ A3</footer>
+    </section>
+
+  </div>
+
+  <script type="module" src="firebase-config.js"></script>
+  <script type="module" src="admin-app.js"></script>
 </body>
-
 </html>
-
