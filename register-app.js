@@ -1,5 +1,5 @@
 import { auth, db } from "./firebase-config.js"
-import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"
+import { createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"
 import {
   doc,
   setDoc,
@@ -89,6 +89,7 @@ $("registerForm").addEventListener("submit", async (event) => {
 
     showMsg("تم إرسال طلبك بنجاح! حسابك قيد المراجعة والموافقة من قِبل الأدمن.", "ok")
     $("registerForm").reset()
+    await signOut(auth)
     setTimeout(() => {
       window.location.href = "./login.html"
     }, 2000)
