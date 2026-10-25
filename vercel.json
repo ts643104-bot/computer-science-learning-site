@@ -27,6 +27,7 @@
     }
   ],
   "rewrites": [
+    { "source": "/auth/(.*)", "destination": "/api/auth" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
