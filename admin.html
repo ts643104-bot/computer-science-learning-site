@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>لوحة تحكم الأدمن</title>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div class="ad-shell">
+
+    <section id="panelView" class="ad-panel-shell">
+      <header class="ad-bar">
+        <div class="ad-bar-brand">
+          <span class="ad-logo-mark sm">A3</span>
+          <strong>لوحة الأدمن</strong>
+        </div>
+        <div class="ad-bar-user">
+          <span class="ad-who">وضع مفتوح — بدون تسجيل دخول</span>
+          <a href="./index.html" class="ad-ghost ad-link">الرئيسية</a>
+        </div>
+      </header>
+
+      <nav class="ad-tabs">
+        <button class="ad-tab on" data-tab="overview">نظرة عامة</button>
+        <button class="ad-tab" data-tab="pending">الطلبات المعلقة <span id="pendingTabCount" class="ad-badge zero">0</span></button>
+        <button class="ad-tab" data-tab="whitelist">الـ Whitelist <span id="wlCount" class="ad-badge">0</span></button>
+        <button class="ad-tab" data-tab="users">المستخدمون <span id="usCount" class="ad-badge">0</span></button>
+      </nav>
+
+      <div id="panelMsg" class="ad-msg global"></div>
+
+      <section id="tab-overview" class="ad-panel on">
+        <div class="ad-stats">
+          <div class="ad-stat"><span>الطلاب</span><b id="stStudents">0</b></div>
+          <div class="ad-stat"><span>الأدمن</span><b id="stAdmins">0</b></div>
+          <div class="ad-stat"><span>مسموحين</span><b id="stWhitelist">0</b></div>
+          <div class="ad-stat"><span>معلقين</span><b id="stPending">0</b></div>
+          <div class="ad-stat"><span>إكمالات</span><b id="stCompletions">0</b></div>
+        </div>
+      </section>
+
+      <section id="tab-pending" class="ad-panel">
+        <div class="ad-card-wrap">
+          <table class="ad-table">
+            <thead><tr><th>الاسم</th><th>البريد الإلكتروني</th><th>وقت الطلب</th><th>إجراء</th></tr></thead>
+            <tbody id="pendingBody"><tr><td colspan="4" class="ad-empty">لا يوجد طلبات معلقة</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="tab-whitelist" class="ad-panel">
+        <div class="ad-card-wrap">
+          <div class="ad-add">
+            <input id="wlEmails" type="text" placeholder="إيميلات مفصولة بفواصل أو مسافات">
+            <input id="wlLabel" type="text" placeholder="اسم الطالب (اختياري)">
+            <button id="wlAddBtn" class="ad-primary sm">إضافة</button>
+          </div>
+          <table class="ad-table">
+            <thead><tr><th>البريد الإلكتروني</th><th>الحالة</th><th>المالك</th><th>إجراء</th></tr></thead>
+            <tbody id="wlBody"><tr><td colspan="4" class="ad-empty">لا يوجد إيميلات مسموحة لسه</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="tab-users" class="ad-panel">
+        <div class="ad-card-wrap">
+          <table class="ad-table">
+            <thead><tr><th>#</th><th>الاسم</th><th>البريد الإلكتروني</th><th>الرتبة</th><th>النقاط</th><th>الدور</th><th>إجراء</th></tr></thead>
+            <tbody id="usBody"><tr><td colspan="7" class="ad-empty">لا يوجد مستخدمين لسه</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <footer class="ad-shell-foot">تصميم المهندس طه سلطان / タハ A3</footer>
+    </section>
+
+  </div>
+
+  <script type="module" src="firebase-config.js"></script>
+  <script type="module" src="admin-app.js"></script>
+</body>
+</html>
