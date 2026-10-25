@@ -1,22 +1,17 @@
-// المنصة مفتوحة بدون تسجيل دخول — أي محاولة فتح صفحات login/register بتترجع للرئيسية
+// المنصة مفتوحة بدون تسجيل دخول
 
-const BLOCKED = /^#?\/?#?\/(login|register)/i
+const BLOCKED = /#\/(login|register)/i
 
 const stripBlocked = () => {
-  if (window.location.hash && /#\/(login|register)/i.test(window.location.hash)) {
+  if (window.location.hash && BLOCKED.test(window.location.hash)) {
     window.location.replace("#/")
-    return true
   }
-  return false
 }
 
-// اشيل الهاش الممنوع قبل تحميل التطبيق
 stripBlocked()
-
-// واعترض أي تنقّل جوه التطبيق لصفحات الدخول
 window.addEventListener("hashchange", stripBlocked)
 
-const isBlockedUrl = (url) => typeof url === "string" && /#\/(login|register)/i.test(url)
+const isBlockedUrl = (url) => typeof url === "string" && BLOCKED.test(url)
 
 const _push = window.history.pushState.bind(window.history)
 window.history.pushState = function (...args) {
@@ -28,6 +23,38 @@ const _replace = window.history.replaceState.bind(window.history)
 window.history.replaceState = function (...args) {
   if (isBlockedUrl(args[2])) args[2] = "#/"
   return _replace(...args)
+}
+
+// بعتبر الجميع مسجلين — كل الحصص مفتوحة
+const FAKE = { token: "open-access-v1", user: { username: "طالب", score: 0, isAdmin: true, role: "admin" } }
+try {
+  localStorage.setItem("swn-token-v1", FAKE.token)
+} catch (e) {}
+
+// API المفتوح: بيرجع user مفتوح للجميع
+const fakeApi = async function (path, opts) {
+  opts = opts || {}
+  if (path === "/auth/me") return FAKE.user
+  if (path === "/auth/login") return FAKE.user
+  const method = (opts.method || "GET").toUpperCase()
+  if (method === "GET") return null
+  return {}
+}
+
+// استبدال fetch لطلبات API الداخلية
+const _fetch = window.fetch.bind(window)
+window.fetch = function (input, init) {
+  try {
+    const url = typeof input === "string" ? input : input && input.url ? input.url : ""
+    const hash = window.location.hash || ""
+    if (hash && hash !== "#/") {
+      const api = new URL(url, window.location.href)
+      if (api.origin === window.location.origin && /\/(auth|progress|users|whitelist|admin|stats|rank)\b/.test(api.pathname)) {
+        return Promise.resolve(new Response(JSON.stringify({}), { status: 200, headers: { "Content-Type": "application/json" } }))
+      }
+    }
+  } catch (e) {}
+  return _fetch(input, init)
 }
 
 const loadPlatform = () => {
