@@ -31,27 +31,22 @@ try {
   localStorage.setItem("swn-token-v1", FAKE.token)
 } catch (e) {}
 
-// API المفتوح: بيرجع user مفتوح للجميع
-const fakeApi = async function (path, opts) {
-  opts = opts || {}
-  if (path === "/auth/me") return FAKE.user
-  if (path === "/auth/login") return FAKE.user
-  const method = (opts.method || "GET").toUpperCase()
-  if (method === "GET") return null
-  return {}
-}
-
-// استبدال fetch لطلبات API الداخلية
+// استبدال fetch لطلبات API الداخلية — بيرجع استجابات محلية بدل السيرفر
 const _fetch = window.fetch.bind(window)
 window.fetch = function (input, init) {
   try {
     const url = typeof input === "string" ? input : input && input.url ? input.url : ""
-    const hash = window.location.hash || ""
-    if (hash && hash !== "#/") {
-      const api = new URL(url, window.location.href)
-      if (api.origin === window.location.origin && /\/(auth|progress|users|whitelist|admin|stats|rank)\b/.test(api.pathname)) {
-        return Promise.resolve(new Response(JSON.stringify({}), { status: 200, headers: { "Content-Type": "application/json" } }))
-      }
+    const api = new URL(url, window.location.href)
+    if (
+      api.origin === window.location.origin &&
+      /\/(auth|progress|users|whitelist|admin|stats|rank)\b/.test(api.pathname)
+    ) {
+      return Promise.resolve(
+        new Response(JSON.stringify({}), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        })
+      )
     }
   } catch (e) {}
   return _fetch(input, init)
