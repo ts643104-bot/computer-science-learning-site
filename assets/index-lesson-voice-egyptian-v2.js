@@ -1,6 +1,6 @@
 import { buildLessonPreview } from "./lesson-preview.js?v=20261105-1455";
 import { getLessonImages, lessonImageLabels } from "./lesson-visuals-v2.js?v=20261105-1455";
-import { createSpeechReader, getReadableLessonText, speechReaderLabels } from "./speech-reader-egyptian-v2.js?v=20261105-1455";
+import { createSpeechReader, getReadableLessonText, speechReaderLabels } from "./speech-reader-egyptian-v2.js?v=20261105-1510";
 import { getLessonIllustration, lessonIllustrationLabels } from "./lesson-illustrations-explanations.js?v=20261105-1455";
 import { getLessonContent } from "./lessons-content.js?v=20261105-1455";
 import { networkLesson } from "./network-lesson.js?v=20261105-1455";

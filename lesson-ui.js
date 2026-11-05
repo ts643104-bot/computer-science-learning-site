@@ -112,7 +112,7 @@ export const mountLessonApp = (root, onLoadFailure) => {
 
   const bundle = document.createElement("script")
   bundle.type = "module"
-  bundle.src = "./assets/index-lesson-voice-egyptian-v2.js?v=20261105-1455"
+  bundle.src = "./assets/index-lesson-voice-egyptian-v2.js?v=20261105-1510"
 
   let settled = false
   let timeoutId

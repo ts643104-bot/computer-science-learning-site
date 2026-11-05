@@ -56,20 +56,6 @@ export function createSpeechReader({ onState, onError }) {
   let runId = 0
 
   const setState = (state) => onState?.(state)
-  const loadVoices = () => {
-    const voices = speech.getVoices()
-    if (voices.length) return Promise.resolve(voices)
-
-    return new Promise((resolve) => {
-      const finish = () => {
-        window.clearTimeout(timeoutId)
-        speech.removeEventListener("voiceschanged", finish)
-        resolve(speech.getVoices())
-      }
-      const timeoutId = window.setTimeout(finish, 2000)
-      speech.addEventListener("voiceschanged", finish, { once: true })
-    })
-  }
   const stop = () => {
     runId += 1
     speech?.cancel()
@@ -77,7 +63,7 @@ export function createSpeechReader({ onState, onError }) {
   }
 
   return {
-    async start(text) {
+    start(text) {
       if (!speech || typeof window.SpeechSynthesisUtterance !== "function") {
         onError?.("المتصفح لا يدعم القراءة الصوتية. جرّب متصفحًا أحدث.")
         return
@@ -91,18 +77,10 @@ export function createSpeechReader({ onState, onError }) {
 
       speech.cancel()
       const activeRun = ++runId
-      const voices = await loadVoices()
-      if (activeRun !== runId) return
-
-      const egyptianVoices = voices.filter((item) => item.lang.toLowerCase().startsWith("ar-eg"))
+      const voices = speech.getVoices()
       const voice =
-        egyptianVoices.find((item) => /natural|online|neural|hoda/i.test(item.name)) ||
-        egyptianVoices[0]
-      if (!voice) {
-        setState("idle")
-        onError?.(speechReaderLabels.egyptianVoiceUnavailable)
-        return
-      }
+        voices.find((item) => item.lang.toLowerCase().startsWith("ar-eg")) ||
+        voices.find((item) => item.lang.toLowerCase().startsWith("ar"))
 
       const speakChunk = (index) => {
         if (activeRun !== runId) return
@@ -112,11 +90,9 @@ export function createSpeechReader({ onState, onError }) {
         }
 
         const utterance = new window.SpeechSynthesisUtterance(chunks[index])
-        utterance.lang = "ar-EG"
-        utterance.rate = 0.95
-        utterance.pitch = 1
-        utterance.volume = 1
-        utterance.voice = voice
+        utterance.lang = voice?.lang || "ar-EG"
+        utterance.rate = 0.9
+        if (voice) utterance.voice = voice
         utterance.onend = () => speakChunk(index + 1)
         utterance.onerror = (event) => {
           if (activeRun !== runId || event.error === "canceled" || event.error === "interrupted") return
