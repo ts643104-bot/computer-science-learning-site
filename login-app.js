@@ -90,7 +90,7 @@ const enterPlatform = async (user) => {
   $("site-footer").classList.remove("lg-hidden")
   const bundle = document.createElement("script")
   bundle.type = "module"
-  bundle.src = "./assets/index-ChB4Ky_W.js"
+  bundle.src = "./assets/index-qT_eEv8o.js"
   document.body.appendChild(bundle)
 }
 
@@ -103,7 +103,10 @@ const authError = (err) => {
   if (code === "auth/invalid-credential" || code === "auth/user-not-found" || code === "auth/wrong-password")
     return "البريد الإلكتروني أو كلمة المرور غلط"
   if (code === "auth/too-many-requests") return "كثرت المحاولات، جرّب بعد شوية"
-  if (code === "auth/network-request-failed") return "مش قادر أوصل للإنترنت"
+  if (code === "auth/network-request-failed")
+    return "تعذر الاتصال بخدمة تسجيل الدخول. افحص الإنترنت أو VPN/مانع الإعلانات، وتأكد من السماح باتصالات Firebase ثم أعد المحاولة."
+  if (code === "auth/unauthorized-domain")
+    return "عنوان الموقع غير معتمد في Firebase Authentication → Settings → Authorized domains."
   if (code === "auth/operation-not-allowed")
     return "تسجيل البريد وكلمة المرور غير مفعّل في إعدادات Firebase Authentication."
   if (code === "auth/invalid-api-key" || code === "auth/api-key-not-valid")

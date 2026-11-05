@@ -138,7 +138,16 @@ const authError = (err) => {
   }
   if (code === "auth/email-already-in-use") fail("الحساب ده موجود بالفعل", "EMAIL_TAKEN")
   if (code === "auth/weak-password") fail("كلمة المرور لازم ٦ حروف على الأقل", "BAD_PASSWORD")
-  if (code === "auth/network-request-failed") fail("مش قادر أوصل للإنترنت", "NETWORK")
+  if (code === "auth/network-request-failed") {
+    fail(
+      "تعذر الاتصال بخدمة تسجيل الدخول. افحص الإنترنت أو VPN/مانع الإعلانات، وتأكد من السماح باتصالات Firebase ثم أعد المحاولة.",
+      "NETWORK"
+    )
+  }
+  if (code === "auth/unauthorized-domain")
+    fail("عنوان الموقع غير معتمد في Firebase Authentication → Settings → Authorized domains.", "DOMAIN")
+  if (code === "auth/operation-not-allowed")
+    fail("تسجيل البريد وكلمة المرور غير مفعّل في Firebase Authentication.", "AUTH_METHOD")
   if (code === "auth/too-many-requests") fail("كثرت المحاولات، جرّب بعد شوية", "RATE")
   if (code === "auth/invalid-api-key" || code === "auth/api-key-not-valid") {
     fail("مفاتيح Firebase غير صحيحة", "CONFIG")
