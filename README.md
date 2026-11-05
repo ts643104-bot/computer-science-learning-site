@@ -54,7 +54,7 @@
 
 ### 2. قواعد أمن Firestore
 
-انسخ محتوى [`firestore.rules`](./firestore.rules) إلى **Firebase Console → Firestore → Rules** ثم انشره. القواعد تحصر صلاحيات الأدمن في UID المعتمد، وتمنع إنشاء أدمن من واجهة عامة.
+انسخ محتوى [`firestore.rules`](./firestore.rules) إلى **Firebase Console → Firestore → Rules** ثم انشره. القواعد تحصر صلاحيات الأدمن في UID المعتمد، وتمنع إنشاء أدمن من واجهة عامة. يجب استخدام أحدث نسخة؛ الدالة `ownUser(userId)` تستقبل معرّف المستخدم صراحةً حتى تكون قواعد Firestore صالحة للنشر.
 
 إذا نجح دخول الأدمن لكن ظهرت رسالة رفض صلاحيات في اللوحة، فتأكد من نشر أحدث نسخة من `firestore.rules` إلى مشروع Firebase نفسه المستخدم في `firebase-config.js`.
 

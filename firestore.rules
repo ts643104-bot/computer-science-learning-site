@@ -12,12 +12,12 @@ service cloud.firestore {
         && request.auth.uid == 'llwV6o2SGjUunVyphHBKiVMszX63';
     }
 
-    function ownUser() {
+    function ownUser(userId) {
       return signedIn() && request.auth.uid == userId;
     }
 
     match /users/{userId} {
-      allow read: if ownUser() || isAdmin();
+      allow read: if ownUser(userId) || isAdmin();
       allow create: if signedIn()
         && ((isAdmin()
               && userId == request.auth.uid
@@ -26,7 +26,7 @@ service cloud.firestore {
               && request.resource.data.get('role', 'student') == 'student'
               && request.resource.data.get('score', 0) == 0));
       allow update: if isAdmin()
-        || (ownUser()
+        || (ownUser(userId)
           && request.resource.data.diff(resource.data).affectedKeys()
                .hasOnly(['lastLogin', 'username']));
       allow delete: if isAdmin();
