@@ -14,6 +14,7 @@ import {
   installFirebaseApiBridge,
   setLegacyAuthToken,
 } from "./firebase-api.js"
+import { addSpeechVoiceGuide } from "./speech-voice-guide.js"
 
 const $ = (id) => document.getElementById(id)
 installFirebaseApiBridge()
@@ -29,6 +30,8 @@ const notify = (el, text, kind = "ok") => {
 }
 
 const showMsg = (text, kind = "ok") => notify($("formMsg"), text, kind)
+
+let speechGuideObserver
 
 const setLoading = (loading, mode) => {
   const btn = $("submitBtn")
@@ -114,6 +117,9 @@ const enterPlatform = async (user) => {
   $("root").classList.remove("lg-hidden")
   $("site-footer").classList.remove("lg-hidden")
   const root = $("root")
+  speechGuideObserver?.disconnect()
+  speechGuideObserver = new MutationObserver(() => addSpeechVoiceGuide(root))
+  speechGuideObserver.observe(root, { childList: true, subtree: true })
   root.replaceChildren()
   const loadingMessage = document.createElement("p")
   loadingMessage.className =
@@ -123,6 +129,7 @@ const enterPlatform = async (user) => {
   const bundle = document.createElement("script")
   bundle.type = "module"
   bundle.src = "./assets/index-lesson-voice-egyptian-v2.js"
+  bundle.addEventListener("load", () => addSpeechVoiceGuide(root), { once: true })
   bundle.onerror = () => {
     root.replaceChildren()
     root.classList.add("lg-hidden")
