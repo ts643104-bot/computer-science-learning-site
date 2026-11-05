@@ -69,16 +69,17 @@ $("registerForm").addEventListener("submit", async (event) => {
     return
   }
 
-  const wlSnap = await getDoc(doc(db, "whitelist", email))
-  if (wlSnap.exists() && wlSnap.data().isActive !== false) {
-    showMsg("البريد ده مفعّل بالفعل — استخدم صفحة الدخول.", "err")
-    return
-  }
-
   setLoading(true)
 
   try {
     const credential = await createUserWithEmailAndPassword(auth, email, password)
+    const wlSnap = await getDoc(doc(db, "whitelist", email))
+    if (wlSnap.exists() && wlSnap.data().isActive !== false) {
+      await signOut(auth)
+      clearLegacyAuthToken()
+      showMsg("البريد ده مفعّل بالفعل — استخدم صفحة الدخول.", "err")
+      return
+    }
 
     await setDoc(doc(db, "pending_requests", email), {
       email,
@@ -97,6 +98,15 @@ $("registerForm").addEventListener("submit", async (event) => {
     }, 2000)
   } catch (err) {
     showMsg(authError(err), "err")
+    if (auth.currentUser) {
+      try {
+        await signOut(auth)
+      } catch (signOutError) {
+        showMsg(`تعذر إنهاء جلسة التسجيل: ${signOutError.message || "حاول مرة أخرى."}`, "err")
+        return
+      }
+    }
+    clearLegacyAuthToken()
   } finally {
     setLoading(false)
   }

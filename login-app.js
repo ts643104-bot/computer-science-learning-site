@@ -104,6 +104,14 @@ const authError = (err) => {
     return "البريد الإلكتروني أو كلمة المرور غلط"
   if (code === "auth/too-many-requests") return "كثرت المحاولات، جرّب بعد شوية"
   if (code === "auth/network-request-failed") return "مش قادر أوصل للإنترنت"
+  if (code === "auth/operation-not-allowed")
+    return "تسجيل البريد وكلمة المرور غير مفعّل في إعدادات Firebase Authentication."
+  if (code === "auth/invalid-api-key" || code === "auth/api-key-not-valid")
+    return "إعدادات Firebase غير صحيحة. راجع firebase-config.js."
+  if (code === "permission-denied" || code === "firestore/permission-denied")
+    return "Firebase رفض العملية — تأكد من نشر قواعد Firestore الموجودة في firestore.rules."
+  if (code === "unavailable" || code === "firestore/unavailable")
+    return "خدمة Firebase غير متاحة حاليًا. حاول مرة أخرى."
   return "حصلت مشكلة. جرب تاني."
 }
 
