@@ -74,6 +74,20 @@ const setStudentRole = async (uid, email) => {
   }
 }
 
+const enterPlatform = async (user) => {
+  const email = normalizeEmail(user.email)
+  await setStudentRole(user.uid, email)
+  await signOut(auth)
+  sessionStorage.setItem("shabaka-student", email)
+  $("authShell").classList.add("lg-hidden")
+  $("root").classList.remove("lg-hidden")
+  $("site-footer").classList.remove("lg-hidden")
+  const bundle = document.createElement("script")
+  bundle.type = "module"
+  bundle.src = "./assets/index-ChB4Ky_W.js"
+  document.body.appendChild(bundle)
+}
+
 const authError = (err) => {
   const code = err && err.code
   if (code === "auth/invalid-email") return "البريد الإلكتروني غير صحيح"
@@ -100,24 +114,18 @@ const handleLogin = async (email, password) => {
   const wl = await checkWhitelist(emailLower)
 
   if (!wl.allowed) {
-    await setDoc(
-      doc(db, "pending_requests", emailLower),
-      {
-        email: emailLower,
-        status: "pending",
-        requestedAt: new Date().toISOString(),
-      },
-      { merge: true }
-    )
+    await setDoc(doc(db, "pending_requests", emailLower), {
+      email: emailLower,
+      uid: credential.user.uid,
+      status: "pending",
+      requestedAt: new Date().toISOString(),
+    }, { merge: true })
+    await signOut(auth)
     showMsg("طلبك قيد المراجعة والموافقة من الأدمن.", "err")
     return
   }
 
-  await setStudentRole(credential.user.uid, emailLower)
-  showMsg("تم الدخول بنجاح، جاري تحويلك للموقع…", "ok")
-  setTimeout(() => {
-    window.location.href = "./index.html"
-  }, 1200)
+  await enterPlatform(credential.user)
 }
 
 const handleRegister = async (email, password) => {
@@ -149,14 +157,12 @@ const handleRegister = async (email, password) => {
     requestedAt: new Date().toISOString(),
   })
 
-  showMsg("تم إرسال طلبك. حسابك يحتاج موافقة الأدمن قبل الدخول.", "ok")
   await signOut(auth)
-  setTimeout(() => {
-    window.location.href = "./index.html"
-  }, 2000)
+  setMode("login")
+  showMsg("تم إرسال طلبك. حسابك يحتاج موافقة الأدمن قبل الدخول.", "ok")
 }
 
-$("authForm").addEventListener("submit", (event) => {
+$("authForm").addEventListener("submit", async (event) => {
   event.preventDefault()
   const email = $("email").value.trim()
   const password = $("password").value
@@ -165,8 +171,20 @@ $("authForm").addEventListener("submit", (event) => {
     return
   }
   setLoading(true, mode)
-  const run = mode === "register" ? handleRegister : handleLogin
-  run(email, password).finally(() => setLoading(false, mode))
+  try {
+    const run = mode === "register" ? handleRegister : handleLogin
+    await run(email, password)
+  } catch (err) {
+    try {
+      if (auth.currentUser) await signOut(auth)
+    } catch (signOutError) {
+      showMsg(`تعذر إنهاء جلسة الدخول: ${signOutError.message || "حاول مرة أخرى."}`, "err")
+      return
+    }
+    showMsg(authError(err), "err")
+  } finally {
+    setLoading(false, mode)
+  }
 })
 
 const checkExistingSession = async () => {
@@ -181,7 +199,17 @@ const checkExistingSession = async () => {
 const init = async () => {
   const user = await checkExistingSession()
   if (user) {
-    window.location.href = "./index.html"
+    const email = normalizeEmail(user.email)
+    try {
+      if (await checkWhitelist(email)) {
+        await enterPlatform(user)
+      } else {
+        await signOut(auth)
+        showMsg("حسابك لم يتم الموافقة عليه بعد — بانتظار مراجعة الأدمن.", "err")
+      }
+    } catch (err) {
+      showMsg(authError(err), "err")
+    }
   }
 }
 

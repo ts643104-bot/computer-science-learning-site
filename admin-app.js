@@ -1,7 +1,6 @@
-import { auth, db } from "./firebase-config.js"
+import { auth, db, ADMIN_UID } from "./firebase-config.js"
 import {
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
   signOut,
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"
 import {
@@ -17,10 +16,11 @@ const $ = (id) => document.getElementById(id)
 
 const escapeHtml = (value) =>
   String(value ?? "")
-    .replace(/&/g, "&")
-    .replace(/</g, "<")
-    .replace(/>/g, ">")
-    .replace(/"/g, """)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
 
 const notify = (el, text, kind = "ok") => {
   if (!text) {
@@ -35,19 +35,11 @@ const notify = (el, text, kind = "ok") => {
 const showLogin = () => {
   $("loginView").classList.remove("ad-hidden")
   $("panelView").classList.add("ad-hidden")
-  $("bootstrapView").classList.add("ad-hidden")
 }
 
 const showPanel = () => {
   $("loginView").classList.add("ad-hidden")
   $("panelView").classList.remove("ad-hidden")
-  $("bootstrapView").classList.add("ad-hidden")
-}
-
-const showBootstrap = () => {
-  $("loginView").classList.add("ad-hidden")
-  $("panelView").classList.add("ad-hidden")
-  $("bootstrapView").classList.remove("ad-hidden")
 }
 
 const showIdentity = (user) => {
@@ -158,12 +150,6 @@ const userRef = (uid) => doc(db, "users", uid)
 const whitelistDoc = (email) => doc(db, "whitelist", email)
 const pendingDoc = (email) => doc(db, "pending_requests", email)
 
-const readUser = async (uid) => {
-  if (!uid) return null
-  const snap = await getDoc(userRef(uid))
-  return snap.exists() ? { uid, ...snap.data() } : null
-}
-
 const publicUser = (data) => {
   if (!data) return null
   return {
@@ -175,11 +161,6 @@ const publicUser = (data) => {
   }
 }
 
-const countAdmins = async () => {
-  const snap = await getDocs(collection(db, "users"))
-  return snap.docs.filter((entry) => entry.data().role === "admin").length
-}
-
 const adminLogin = async (email, password) => {
   const clean = normalizeEmail(email)
   if (!clean || !password) fail("اكتب البريد الإلكتروني وكلمة المرور", "MISSING")
@@ -188,28 +169,33 @@ const adminLogin = async (email, password) => {
   try {
     credential = await signInWithEmailAndPassword(auth, clean, password)
   } catch (err) {
-    const code = err && err.code
-    if (code === "auth/user-not-found" || code === "auth/invalid-credential") {
-      const admins = await countAdmins().catch(() => 0)
-      if (!admins) {
-        fail("مفيش أي حساب أدمن في النظام — أنشئ واحد من شاشة الإعداد.", "NO_ADMIN")
-      }
-    }
     authError(err)
   }
 
-  const data = await readUser(credential.user.uid)
-  if (!data || data.role !== "admin") {
+  if (credential.user.uid !== ADMIN_UID) {
     await signOut(auth)
     fail("الحساب ده مش حساب أدمن", "FORBIDDEN")
   }
 
-  await setDoc(userRef(credential.user.uid), { lastLogin: new Date().toISOString() }, { merge: true }).catch(() => {})
-
-  return { ok: true, user: publicUser(data) }
+  const adminUser = {
+    uid: credential.user.uid,
+    email: credential.user.email || clean,
+    username: "admin",
+    role: "admin",
+    score: 0,
+    lastLogin: new Date().toISOString(),
+  }
+  try {
+    await setDoc(userRef(credential.user.uid), adminUser, { merge: true })
+  } catch (err) {
+    await signOut(auth)
+    throw err
+  }
+  return { ok: true, user: publicUser(adminUser) }
 }
 
 const bootstrapAdmin = async (email, password) => {
+  fail("إنشاء الأدمن من واجهة الموقع غير مسموح.", "FORBIDDEN")
   const clean = normalizeEmail(email)
   if (!clean || !password) fail("اكتب البريد الإلكتروني وكلمة المرور", "MISSING")
   if (password.length < 6) fail("كلمة المرور لازم ٦ حروف على الأقل", "BAD_PASSWORD")
@@ -482,26 +468,23 @@ $("loginForm").addEventListener("submit", async (event) => {
     showIdentity(data.user)
     loadDashboard()
   } catch (err) {
-    if (err.code === "NO_ADMIN") {
-      $("bootstrapEmail").value = email
-      notify($("bootstrapMsg"), err.message, "err")
-      showBootstrap()
-      return
-    }
-    if (err.code === "NETWORK" || err.code === "RATE" || err.code === "CONFIG") {
-      notify($("loginMsg"), err.message, "err")
-      return
-    }
+    if (err.code === "BAD_CREDENTIALS") {
+      const state = readLock()
+      const attempts = (state.attempts || 0) + 1
 
-    const state = readLock()
-    const attempts = (state.attempts || 0) + 1
-
-    if (attempts >= MAX_ATTEMPTS) {
-      writeLock({ attempts: MAX_ATTEMPTS, until: Date.now() + LOCK_MS })
-      notify($("loginMsg"), "تم استنفاد كل المحاولات. اللوحة مقفولة ٢٤ ساعة على هذا الجهاز.", "err")
+      if (attempts >= MAX_ATTEMPTS) {
+        writeLock({ attempts: MAX_ATTEMPTS, until: Date.now() + LOCK_MS })
+        notify($("loginMsg"), "تم استنفاد كل المحاولات. اللوحة مقفولة ٢٤ ساعة على هذا الجهاز.", "err")
+      } else {
+        writeLock({ attempts, until: 0 })
+        notify($("loginMsg"), lockMessage({ attempts, until: 0 }), "err")
+      }
     } else {
-      writeLock({ attempts, until: 0 })
-      notify($("loginMsg"), lockMessage({ attempts, until: 0 }), "err")
+      notify($("loginMsg"), err.message || "تعذر تسجيل الدخول. حاول مرة أخرى.", "err")
+    }
+
+    if (err.code === "FORBIDDEN") {
+      $("password").value = ""
     }
   } finally {
     const state = readLock()
@@ -518,7 +501,8 @@ $("loginForm").addEventListener("submit", async (event) => {
   }
 })
 
-$("bootstrapForm").addEventListener("submit", async (event) => {
+const bootstrapForm = $("bootstrapForm")
+if (bootstrapForm) bootstrapForm.addEventListener("submit", async (event) => {
   event.preventDefault()
 
   const email = $("bootstrapEmail").value.trim()
@@ -551,7 +535,8 @@ $("bootstrapForm").addEventListener("submit", async (event) => {
   }
 })
 
-$("bootstrapCancel").addEventListener("click", () => {
+const bootstrapCancel = $("bootstrapCancel")
+if (bootstrapCancel) bootstrapCancel.addEventListener("click", () => {
   showLogin()
   notify($("loginMsg"), "", "ok")
 })

@@ -69,6 +69,10 @@ const authError = (err) => {
     return "البريد الإلكتروني أو كلمة المرور غلط"
   if (code === "auth/too-many-requests") return "كثرت المحاولات، جرّب بعد شوية"
   if (code === "auth/network-request-failed") return "مش قادر أوصل للإنترنت"
+  if (code === "permission-denied" || code === "firestore/permission-denied")
+    return "Firebase رفض العملية — تأكد من نشر قواعد Firestore الموجودة في firestore.rules."
+  if (code === "unavailable" || code === "firestore/unavailable")
+    return "خدمة Firebase غير متاحة حاليًا. حاول مرة أخرى."
   return "حصلت مشكلة. حاول مرة تانية."
 }
 
@@ -128,9 +132,9 @@ const handleRegister = async (email, password) => {
   }
 
   await signOut(auth)
-  showMsg("تم إرسال طلبك للأدمن، بانتظار الموافقة للدخول", "ok")
   $("authForm").reset()
   setMode("login")
+  showMsg("تم إرسال طلبك للأدمن، بانتظار الموافقة للدخول", "ok")
 }
 
 const handleLogin = async (email, password) => {
@@ -170,7 +174,18 @@ $("authForm").addEventListener("submit", async (event) => {
   }
 
   setLoading(true, mode)
-  const run = mode === "register" ? handleRegister : handleLogin
-  await run(email, password)
-  setLoading(false, mode)
+  try {
+    const run = mode === "register" ? handleRegister : handleLogin
+    await run(email, password)
+  } catch (err) {
+    try {
+      if (auth.currentUser) await signOut(auth)
+    } catch (signOutError) {
+      showMsg(`تعذر إنهاء جلسة الدخول: ${signOutError.message || "حاول مرة أخرى."}`, "err")
+      return
+    }
+    showMsg(authError(err), "err")
+  } finally {
+    setLoading(false, mode)
+  }
 })

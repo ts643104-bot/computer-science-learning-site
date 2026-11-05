@@ -8,11 +8,12 @@ const firebaseConfig = {
   projectId: "computer-science-learning-site",
   storageBucket: "computer-science-learning-site.firebasestorage.app",
   messagingSenderId: "107894672121",
-  appId: "1:107894672121:web:fc4580083d58c37beaf028",
-  measurementId: "G-5CXX5X49YL"
+  appId: "1:107894672121:web:e9b7045307fc6a4aeaf028",
+  measurementId: "G-BQ3SLEX0SW"
 }
 
 const app = initializeApp(firebaseConfig)
 export const auth = getAuth(app)
 export const db = getFirestore(app)
+export const ADMIN_UID = "llwV6o2SGjUunVyphHBKiVMszX63"
 export { app }

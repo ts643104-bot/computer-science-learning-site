@@ -11,18 +11,18 @@
 
 ## نظرة سريعة
 
-المشروع الآن يعتمد على **Firebase** (Firebase Auth + Cloud Firestore) بدلاً من Google Sheets / Apps Script.
+المشروع يستخدم **Firebase Authentication** لتسجيل الطلاب والأدمن، و**Cloud Firestore** لطلبات التسجيل وبيانات المستخدمين ولوحة التحكم.
 
 ```
-المتصفح  →  api-client.js  →  Firebase SDK  →  Cloud Firestore
+المتصفح  →  Firebase Authentication + Cloud Firestore
 ```
 
 **الميزات:**
 
 - بيانات حقيقية ومركزية في Cloud Firestore.
-- مصادقة موحّدة عبر Firebase Auth (بريد/باسورد مشتق من رقم الهاتف).
+- تسجيل الطلاب والأدمن بالبريد الإلكتروني وكلمة المرور.
 - قواعد أمن Firestore لتقييد الوصول.
-- لا سيرفر، لا SQLite، لا Apps Script. كله Static على Vercel + Firebase.
+- الموقع ثابت على Vercel، والبيانات في Firebase.
 
 ---
 
@@ -30,10 +30,10 @@
 
 | الملف | الوصف |
 |---|---|
-| `firebase-config.js` | إعدادات Firebase (تحمّل أولاً كـ `<script>` عادي) |
-| `api-client.js` | طبقة التواصل مع Firebase (التسجيل، الدخول، التقدم، التعليقات، لوحة الأدمن) |
-| `login-app.js` | منطق شاشة تسجيل الدخول / إنشاء حساب الطلاب |
-| `admin-app.js` | منطق لوحة تحكم الأدمن مع نظام الحظر |
+| `firebase-config.js` | إعدادات Firebase ومُعرّف حساب الأدمن المسموح |
+| `app.js` | تسجيل الطلاب والتحقق من الموافقة |
+| `login-app.js` | تسجيل الدخول / إنشاء حساب الطلاب |
+| `admin-app.js` | تسجيل دخول الأدمن ولوحة التحكم |
 | `login.html` | صفحة تسجيل الدخول للطلاب |
 | `admin.html` | لوحة تحكم الأدمن |
 | `index.html` | الموقع الرئيسي |
@@ -53,47 +53,13 @@
 
 ### 2. قواعد أمن Firestore
 
-في **Firestore → Rules**، الصق القواعد التالية:
+انسخ محتوى [`firestore.rules`](./firestore.rules) إلى **Firebase Console → Firestore → Rules** ثم انشره. القواعد تحصر صلاحيات الأدمن في UID المعتمد، وتمنع إنشاء أدمن من واجهة عامة.
 
-```javascript
-rules_version = '2';
-service cloud.firestore('databases/{database}/documents') {
-  match /databases/{database}/resources/users/{userId} {
-    allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
-    allow create: if request.auth != null;
-    allow update, delete: if request.auth.uid == userId || isAdmin();
-  }
+### 3. إعداد حساب الأدمن
 
-  match /databases/{database}/resources/whitelist/{phone} {
-    allow read: if true;
-    allow create, update, delete: if isAdmin();
-  }
+فعّل **Email/Password** في Firebase Authentication، ثم سجّل الدخول من `/admin.html` باستخدام بيانات حساب Firebase الموجود الذي يطابق UID المعرّف في `firebase-config.js`. لا توجد شاشة لإنشاء أول أدمن؛ يجب أن يكون الحساب موجودًا مسبقًا في Firebase Authentication.
 
-  match /databases/{database}/resources/comments/{commentId} {
-    allow read: if true;
-    allow create: if request.auth != null || request.resource.data.uid == 'guest';
-  }
-
-  match /databases/{database}/resources/progress/{progressId} {
-    allow read, create, update, delete: if request.auth != null && resource.data.uid == request.auth.uid;
-  }
-
-  function isAdmin() {
-    return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-  }
-}
-```
-
-### 3. أنشئ حساب الأدمن الأول
-
-بعد ربط التطبيق بـ Firebase:
-
-1. افتح لوحة الأدمن (`admin.html`).
-2. سجّل الدخول بالواتساب وطلب تفعية الحساب الأول.
-3. استخدم **Firebase Console → Firestore → users** لتعديل حسابك:
-   - ضع `role: "admin"`.
-
-بديل: استخدم Firebase CLI لتشغيل سكريبت seed لإنشاء الأدمن.
+فعّل **Authentication → Settings → Authorized domains** للنطاق المحلي ولنطاق Vercel قبل الاختبار.
 
 ---
 
@@ -118,9 +84,9 @@ service cloud.firestore('databases/{database}/documents') {
 ## الأمان
 
 - الباسوردات مُدارة عبر Firebase Auth (bcrypt على مستوى Firebase).
-- **التسجيل مقفول:** لازم رقمك يكون مضاف في مجموعة `whitelist` في Firestore أول.
-- الأدمن بس هو اللي يوصل لعمليات `admin*`.
-- **نظام قفل الأدمن:** محاولتان فقط، أولاً يُغلق لمدة ٢٤ ساعة، ثانيته يُقفل بشكل دائم على الجهاز.
+- **التسجيل مقفول:** يجب موافقة الأدمن وإضافة البريد إلى مجموعة `whitelist` في Firestore.
+- قواعد Firestore هي مرجع الصلاحيات؛ فحص الواجهة وحده لا يمنح صلاحية أدمن.
+- قفل المحاولات في المتصفح لتحسين تجربة الاستخدام، وليس بديلًا عن حماية Firebase.
 
 ---
 
