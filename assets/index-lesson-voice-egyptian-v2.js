@@ -1,9 +1,9 @@
-import { buildLessonPreview } from "./lesson-preview.js";
-import { getLessonImages, lessonImageLabels } from "./lesson-visuals-v2.js";
-import { createSpeechReader, getReadableLessonText, speechReaderLabels } from "./speech-reader-egyptian-v2.js";
-import { getLessonIllustration, lessonIllustrationLabels } from "./lesson-illustrations-explanations.js";
-import { getLessonContent } from "./lessons-content.js";
-import { networkLesson } from "./network-lesson.js";
+import { buildLessonPreview } from "./lesson-preview.js?v=20261105-1455";
+import { getLessonImages, lessonImageLabels } from "./lesson-visuals-v2.js?v=20261105-1455";
+import { createSpeechReader, getReadableLessonText, speechReaderLabels } from "./speech-reader-egyptian-v2.js?v=20261105-1455";
+import { getLessonIllustration, lessonIllustrationLabels } from "./lesson-illustrations-explanations.js?v=20261105-1455";
+import { getLessonContent } from "./lessons-content.js?v=20261105-1455";
+import { networkLesson } from "./network-lesson.js?v=20261105-1455";
 function vf(e,t){for(var n=0;n<t.length;n++){const r=t[n];if(typeof r!="string"&&!Array.isArray(r)){for(const l in r)if(l!=="default"&&!(l in e)){const i=Object.getOwnPropertyDescriptor(r,l);i&&Object.defineProperty(e,l,i.get?i:{enumerable:!0,get:()=>r[l]})}}}return Object.freeze(Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}))}(function(){const t=document.createElement("link").relList;if(t&&t.supports&&t.supports("modulepreload"))return;for(const l of document.querySelectorAll('link[rel="modulepreload"]'))r(l);new MutationObserver(l=>{for(const i of l)if(i.type==="childList")for(const a of i.addedNodes)a.tagName==="LINK"&&a.rel==="modulepreload"&&r(a)}).observe(document,{childList:!0,subtree:!0});function n(l){const i={};return l.integrity&&(i.integrity=l.integrity),l.referrerPolicy&&(i.referrerPolicy=l.referrerPolicy),l.crossOrigin==="use-credentials"?i.credentials="include":l.crossOrigin==="anonymous"?i.credentials="omit":i.credentials="same-origin",i}function r(l){if(l.ep)return;l.ep=!0;const i=n(l);fetch(l.href,i)}})();function jf(e){return e&&e.__esModule&&Object.prototype.hasOwnProperty.call(e,"default")?e.default:e}var _u={exports:{}},Wl={},Lu={exports:{}},D={};/**
  * @license React
  * react.production.min.js
