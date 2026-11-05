@@ -11,7 +11,8 @@ const addLink = (href, text, className = "") => {
 
 const removeFreeLessonClaim = (root) => {
   root.querySelectorAll("h1, h2, h3").forEach((heading) => {
-    heading.textContent = heading.textContent.replace(/\s*[—–-]\s*ومجاني بالكامل\s*$/, "")
+    const updatedText = heading.textContent.replace(/\s*[—–-]\s*ومجاني بالكامل\s*$/, "")
+    if (updatedText !== heading.textContent) heading.textContent = updatedText
   })
 }
 
