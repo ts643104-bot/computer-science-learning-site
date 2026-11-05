@@ -279,7 +279,7 @@ const getWhitelist = async () => {
 
 const addToWhitelist = async (emails, label) => {
   const list = String(emails || "")
-    .split(/[\n,،;]+/)
+    .split(/[\s,،;]+/)
     .map((entry) => normalizeEmail(entry))
     .filter(Boolean)
 
@@ -338,6 +338,13 @@ const getUsers = async () => {
     }
   })
   items.sort((a, b) => b.score - a.score)
+  let rank = 0
+  let previousScore
+  items.forEach((item, index) => {
+    if (item.score !== previousScore) rank = index + 1
+    item.rank = rank
+    previousScore = item.score
+  })
   return { items }
 }
 
@@ -478,7 +485,7 @@ const loadDashboard = async () => {
               `<tr><td class="ad-mono">${index + 1}</td>` +
               `<td>${escapeHtml(user.username)}</td>` +
               `<td class="ad-mono">${escapeHtml(user.email)}</td>` +
-              `<td><span class="ad-pill">${escapeHtml(user.role)}</span></td>` +
+              `<td><span class="ad-pill">${user.rank}</span></td>` +
               `<td class="ad-mono" style="color:#86efac">${user.score}</td>` +
               `<td><span class="ad-pill ${user.role === "admin" ? "g" : "s"}">${escapeHtml(user.role)}</span></td>` +
               '<td><div class="ad-actions">' +
@@ -591,7 +598,12 @@ if (bootstrapCancel) bootstrapCancel.addEventListener("click", () => {
 })
 
 $("logoutBtn").addEventListener("click", async () => {
-  await signOut(auth).catch(() => {})
+  try {
+    await signOut(auth)
+  } catch (err) {
+    notify($("panelMsg"), err.message || "تعذر تسجيل الخروج. حاول مرة أخرى.", "err")
+    return
+  }
   showLogin()
   notify($("loginMsg"), "تم تسجيل الخروج", "ok")
 })
