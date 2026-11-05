@@ -80,15 +80,45 @@ const images = {
     license: "CC BY-SA 3.0 AU",
     licenseUrl: "https://creativecommons.org/licenses/by-sa/3.0/au/",
   },
+  binaryPlaceValues: {
+    title: "قراءة العدد الثنائي",
+    alt: "رسم يوضح أوزان خانات العدد الثنائي 01011 ومجموعها 11 بالعشري",
+    src: "./images/binary-place-values.svg",
+    page: "./images/binary-place-values.svg",
+    artist: "رسم تعليمي أصلي",
+    license: "إنتاج خاص بالموقع",
+    licenseUrl: "./images/binary-place-values.svg",
+  },
+  numberSystemConversion: {
+    title: "التحويل بين الأنظمة العددية",
+    alt: "رسم يقارن تمثيل العدد 13 بالعشري والثنائي والسادس عشر",
+    src: "./images/number-system-conversion.svg",
+    page: "./images/number-system-conversion.svg",
+    artist: "رسم تعليمي أصلي",
+    license: "إنتاج خاص بالموقع",
+    licenseUrl: "./images/number-system-conversion.svg",
+  },
+  searchAlgorithms: {
+    title: "البحث الخطي والبحث الثنائي",
+    alt: "مقارنة مرئية لخطوات البحث عن 16 بخوارزميتي البحث الخطي والثنائي",
+    src: "./images/search-algorithms.svg",
+    page: "./images/search-algorithms.svg",
+    artist: "رسم تعليمي أصلي",
+    license: "إنتاج خاص بالموقع",
+    licenseUrl: "./images/search-algorithms.svg",
+  },
 }
 
 const lessonImageIds = {
   "cs-01": ["input", "motherboard", "cpu"],
   "cs-02": ["memory", "storage"],
+  "cs-03": ["binaryPlaceValues"],
   "cs-04": ["motherboard", "cpu", "memory", "graphics", "storage", "input"],
   "cs-05": ["motherboard", "cpu", "memory"],
   "cs-06": ["memory", "storage"],
+  "cs-07": ["numberSystemConversion"],
   "cs-08": ["storage"],
+  "cs-09": ["searchAlgorithms"],
   "cs-10": ["input"],
   "cs-11": ["cpu", "memory"],
   "cs-12": ["memory", "storage"],
@@ -130,8 +160,8 @@ export function getLessonImages(lessonId) {
 }
 
 export const lessonImageLabels = {
-  heading: "صور حقيقية محفوظة داخل الموقع",
-  help: "اضغط على الصورة لفتح مصدرها، وستجد اسم المصور والترخيص أسفلها.",
+  heading: "صور ورسوم تعليمية محفوظة داخل الموقع",
+  help: "تظهر الصور مع مصادرها وتراخيصها، والرسوم التعليمية أصلية ومصممة لتوضيح الفكرة.",
   source: "افتح الصورة ومصدرها ↗",
-  by: "تصوير",
+  by: "المصدر/الإعداد:",
 }

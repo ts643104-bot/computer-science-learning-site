@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="480" viewBox="0 0 960 480" role="img" aria-labelledby="title description">
+  <title id="title">تحويل العدد 13 بين العشري والثنائي والسادس عشر</title>
+  <desc id="description">العدد 13 بالعشري يساوي 1101 بالثنائي ويساوي D بالسادس عشر، مع أوزان الخانات الثنائية.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#10213a"/>
+      <stop offset="1" stop-color="#07111f"/>
+    </linearGradient>
+  </defs>
+  <rect width="960" height="480" rx="28" fill="url(#background)"/>
+  <text x="480" y="66" fill="#f1f5f9" font-size="32" font-weight="700" text-anchor="middle" direction="rtl">القيمة واحدة والكتابة تختلف</text>
+  <text x="480" y="104" fill="#94a3b8" font-size="19" text-anchor="middle" direction="rtl">مثال: العدد ثلاثة عشر في ثلاثة أنظمة</text>
+  <g text-anchor="middle">
+    <rect x="104" y="145" width="196" height="116" rx="20" fill="#14243a" stroke="#334155"/>
+    <text x="202" y="184" fill="#94a3b8" font-size="19" direction="rtl">عشري</text>
+    <text x="202" y="235" fill="#f8fafc" font-size="48" font-weight="700">13</text>
+    <path d="M325 203h82m-14-14 14 14-14 14" fill="none" stroke="#38bdf8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="430" y="145" width="196" height="116" rx="20" fill="#14243a" stroke="#38bdf8" stroke-width="2"/>
+    <text x="528" y="184" fill="#94a3b8" font-size="19" direction="rtl">ثنائي</text>
+    <text x="528" y="235" fill="#7dd3fc" font-size="48" font-weight="700">1101</text>
+    <path d="M650 203h82m-14-14 14 14-14 14" fill="none" stroke="#38bdf8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="755" y="145" width="112" height="116" rx="20" fill="#14243a" stroke="#334155"/>
+    <text x="811" y="184" fill="#94a3b8" font-size="19" direction="rtl">سداسي عشر</text>
+    <text x="811" y="235" fill="#f8fafc" font-size="48" font-weight="700">D</text>
+  </g>
+  <text x="480" y="306" fill="#cbd5e1" font-size="20" text-anchor="middle" direction="rtl">تأكد من قيمة الثنائي بجمع أوزان الخانات التي تحمل 1</text>
+  <g font-family="sans-serif" text-anchor="middle">
+    <g transform="translate(254 332)">
+      <rect width="94" height="66" rx="14" fill="#14243a" stroke="#334155"/>
+      <text x="47" y="25" fill="#94a3b8" font-size="16">٨</text>
+      <text x="47" y="55" fill="#7dd3fc" font-size="23" font-weight="700">1</text>
+    </g>
+    <g transform="translate(362 332)">
+      <rect width="94" height="66" rx="14" fill="#14243a" stroke="#334155"/>
+      <text x="47" y="25" fill="#94a3b8" font-size="16">٤</text>
+      <text x="47" y="55" fill="#7dd3fc" font-size="23" font-weight="700">1</text>
+    </g>
+    <g transform="translate(470 332)">
+      <rect width="94" height="66" rx="14" fill="#14243a" stroke="#334155"/>
+      <text x="47" y="25" fill="#94a3b8" font-size="16">٢</text>
+      <text x="47" y="55" fill="#64748b" font-size="23" font-weight="700">0</text>
+    </g>
+    <g transform="translate(578 332)">
+      <rect width="94" height="66" rx="14" fill="#14243a" stroke="#334155"/>
+      <text x="47" y="25" fill="#94a3b8" font-size="16">١</text>
+      <text x="47" y="55" fill="#7dd3fc" font-size="23" font-weight="700">1</text>
+    </g>
+  </g>
+  <text x="480" y="441" fill="#f8fafc" font-size="22" font-weight="700" text-anchor="middle">8 + 4 + 0 + 1 = 13</text>
+</svg>

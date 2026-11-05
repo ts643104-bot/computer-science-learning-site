@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="520" viewBox="0 0 960 520" role="img" aria-labelledby="title description">
+  <title id="title">مقارنة البحث الخطي والبحث الثنائي</title>
+  <desc id="description">البحث عن 16 في قائمة مرتبة: يفحص البحث الخطي خمسة عناصر، بينما يصل البحث الثنائي إليه في ثلاثة فحوص.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#10213a"/>
+      <stop offset="1" stop-color="#07111f"/>
+    </linearGradient>
+  </defs>
+  <rect width="960" height="520" rx="28" fill="url(#background)"/>
+  <text x="480" y="62" fill="#f1f5f9" font-size="32" font-weight="700" text-anchor="middle" direction="rtl">اختيار طريقة البحث يوفر فحوصًا</text>
+  <text x="480" y="100" fill="#94a3b8" font-size="18" text-anchor="middle" direction="rtl">نبحث عن ١٦ في قائمة مرتبة — البحث الثنائي يحتاج قائمة مرتبة</text>
+  <rect x="378" y="120" width="204" height="44" rx="22" fill="#172f47" stroke="#38bdf8"/>
+  <text x="480" y="149" fill="#bae6fd" font-size="18" font-weight="700" text-anchor="middle" direction="rtl">الهدف: 16</text>
+  <text x="870" y="215" fill="#cbd5e1" font-size="18" font-weight="700" text-anchor="end" direction="rtl">بحث خطّي</text>
+  <text x="870" y="384" fill="#cbd5e1" font-size="18" font-weight="700" text-anchor="end" direction="rtl">بحث ثنائي</text>
+  <g font-family="sans-serif" text-anchor="middle" font-size="20" font-weight="700">
+    <g transform="translate(89 230)">
+      <rect width="88" height="56" rx="14" fill="#172f47" stroke="#64748b"/><text x="44" y="36" fill="#cbd5e1">2</text>
+    </g>
+    <g transform="translate(193 230)">
+      <rect width="88" height="56" rx="14" fill="#172f47" stroke="#64748b"/><text x="44" y="36" fill="#cbd5e1">5</text>
+    </g>
+    <g transform="translate(297 230)">
+      <rect width="88" height="56" rx="14" fill="#172f47" stroke="#64748b"/><text x="44" y="36" fill="#cbd5e1">8</text>
+    </g>
+    <g transform="translate(401 230)">
+      <rect width="88" height="56" rx="14" fill="#172f47" stroke="#64748b"/><text x="44" y="36" fill="#cbd5e1">12</text>
+    </g>
+    <g transform="translate(505 230)">
+      <rect width="88" height="56" rx="14" fill="#0c3b4e" stroke="#38bdf8" stroke-width="3"/><text x="44" y="36" fill="#7dd3fc">16</text>
+    </g>
+    <g transform="translate(609 230)">
+      <rect width="88" height="56" rx="14" fill="#172f47" stroke="#64748b"/><text x="44" y="36" fill="#cbd5e1">23</text>
+    </g>
+    <g transform="translate(713 230)">
+      <rect width="88" height="56" rx="14" fill="#172f47" stroke="#64748b"/><text x="44" y="36" fill="#cbd5e1">38</text>
+    </g>
+    <g transform="translate(89 399)">
+      <rect width="88" height="56" rx="14" fill="#172f47" stroke="#64748b"/><text x="44" y="36" fill="#cbd5e1">2</text>
+    </g>
+    <g transform="translate(193 399)">
+      <rect width="88" height="56" rx="14" fill="#172f47" stroke="#64748b"/><text x="44" y="36" fill="#cbd5e1">5</text>
+    </g>
+    <g transform="translate(297 399)">
+      <rect width="88" height="56" rx="14" fill="#172f47" stroke="#64748b"/><text x="44" y="36" fill="#cbd5e1">8</text>
+    </g>
+    <g transform="translate(401 399)">
+      <rect width="88" height="56" rx="14" fill="#633b16" stroke="#fbbf24" stroke-width="3"/><text x="44" y="36" fill="#fde68a">12</text>
+    </g>
+    <g transform="translate(505 399)">
+      <rect width="88" height="56" rx="14" fill="#0c3b4e" stroke="#38bdf8" stroke-width="3"/><text x="44" y="36" fill="#7dd3fc">16</text>
+    </g>
+    <g transform="translate(609 399)">
+      <rect width="88" height="56" rx="14" fill="#633b16" stroke="#fbbf24" stroke-width="3"/><text x="44" y="36" fill="#fde68a">23</text>
+    </g>
+    <g transform="translate(713 399)">
+      <rect width="88" height="56" rx="14" fill="#172f47" stroke="#64748b"/><text x="44" y="36" fill="#cbd5e1">38</text>
+    </g>
+  </g>
+  <text x="480" y="314" fill="#94a3b8" font-size="16" text-anchor="middle" direction="rtl">يفحص العناصر بالترتيب حتى يصل إلى الهدف</text>
+  <text x="480" y="483" fill="#94a3b8" font-size="16" text-anchor="middle" direction="rtl">يقارن بالمنتصف ويستبعد نصف القائمة كل مرة</text>
+</svg>
