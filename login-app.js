@@ -97,7 +97,7 @@ const enterPlatform = async (user) => {
   root.appendChild(loadingMessage)
   const bundle = document.createElement("script")
   bundle.type = "module"
-  bundle.src = "./assets/index-lesson-explanations.js"
+  bundle.src = "./assets/index-lesson-explanations-v2.js"
   bundle.onerror = () => {
     root.replaceChildren()
     root.classList.add("lg-hidden")

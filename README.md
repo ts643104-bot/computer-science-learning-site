@@ -39,10 +39,10 @@
 | `app.js` | تسجيل الطلاب والتحقق من الموافقة |
 | `firebase-api.js` | ربط واجهة الدروس المبنية مع تقدم الطالب ونتائج الاختبارات في Firestore |
 | `assets/lessons-content.js` | شروحات الدروس وأهدافها واختباراتها |
-| `assets/lesson-illustrations.js` | الرسوم التوضيحية وشروحات مبسطة لكل درس من الدروس الأربعين |
+| `assets/lesson-illustrations-explanations.js` | الرسوم التوضيحية وشروحات مبسطة لكل درس من الدروس الأربعين |
 | `assets/lesson-visuals.js` | صور مكونات الحاسوب والشبكات ورسوم تعليمية أصلية وروابط المصدر والترخيص |
 | `assets/speech-reader.js` | أدوات قراءة محتوى الدرس باستخدام الصوت في المتصفح |
-| `assets/index-lesson-explanations.js` | واجهة الدروس والرسوم وشروحاتها والصور والقراءة الصوتية |
+| `assets/index-lesson-explanations-v2.js` | واجهة الدروس والرسوم وشروحاتها والصور والقراءة الصوتية |
 | `assets/network-lesson.js` | محتوى درس أنواع الشبكات |
 | `login-app.js` | تسجيل الدخول / إنشاء حساب الطلاب |
 | `admin-app.js` | تسجيل دخول الأدمن ولوحة التحكم |
