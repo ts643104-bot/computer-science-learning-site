@@ -130,7 +130,7 @@ export function getLessonImages(lessonId) {
 }
 
 export const lessonImageLabels = {
-  heading: "صور حقيقية للمكونات",
+  heading: "صور حقيقية محفوظة داخل الموقع",
   help: "اضغط على الصورة لفتح مصدرها، وستجد اسم المصور والترخيص أسفلها.",
   source: "افتح الصورة ومصدرها ↗",
   by: "تصوير",

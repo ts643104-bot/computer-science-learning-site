@@ -40,9 +40,9 @@
 | `firebase-api.js` | ربط واجهة الدروس المبنية مع تقدم الطالب ونتائج الاختبارات في Firestore |
 | `assets/lessons-content.js` | شروحات الدروس وأهدافها واختباراتها |
 | `assets/lesson-illustrations.js` | بيانات الرسوم التوضيحية المخصصة للدروس الأربعين |
-| `assets/lesson-images.js` | صور مكونات الحاسوب والشبكات مع روابط المصدر والترخيص |
+| `assets/lesson-images-local.js` | صور مكونات الحاسوب والشبكات وروابط المصدر والترخيص |
 | `assets/speech-reader.js` | أدوات قراءة محتوى الدرس باستخدام الصوت في المتصفح |
-| `assets/index-lesson-images.js` | واجهة الدروس والرسوم والصور والقراءة الصوتية |
+| `assets/index-lesson-local-images.js` | واجهة الدروس والرسوم والصور والقراءة الصوتية |
 | `assets/network-lesson.js` | محتوى درس أنواع الشبكات |
 | `login-app.js` | تسجيل الدخول / إنشاء حساب الطلاب |
 | `admin-app.js` | تسجيل دخول الأدمن ولوحة التحكم |
