@@ -113,9 +113,23 @@ const enterPlatform = async (user) => {
   $("authShell").classList.add("lg-hidden")
   $("root").classList.remove("lg-hidden")
   $("site-footer").classList.remove("lg-hidden")
+  const root = $("root")
+  root.replaceChildren()
+  const loadingMessage = document.createElement("p")
+  loadingMessage.className =
+    "grid min-h-[50vh] place-items-center px-5 text-center text-slate-300"
+  loadingMessage.textContent = "بيتم تحميل الدروس، لحظة واحدة..."
+  root.appendChild(loadingMessage)
   const bundle = document.createElement("script")
   bundle.type = "module"
-  bundle.src = "./assets/index-lesson-reader.js"
+  bundle.src = "./assets/index-lesson-images.js"
+  bundle.onerror = () => {
+    root.replaceChildren()
+    root.classList.add("lg-hidden")
+    $("site-footer").classList.add("lg-hidden")
+    $("authShell").classList.remove("lg-hidden")
+    showMsg("تعذر تحميل الدروس. افحص اتصال الإنترنت ثم أعد تسجيل الدخول.", "err")
+  }
   document.body.appendChild(bundle)
 }
 
