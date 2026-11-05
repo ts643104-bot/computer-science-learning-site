@@ -15,7 +15,7 @@ import {
   installFirebaseApiBridge,
   setLegacyAuthToken,
 } from "./firebase-api.js"
-import { updateLessonUi } from "./lesson-ui.js"
+import { mountLessonApp } from "./lesson-ui.js"
 
 const $ = (id) => document.getElementById(id)
 installFirebaseApiBridge()
@@ -31,8 +31,6 @@ const notify = (el, text, kind = "ok") => {
 }
 
 const showMsg = (text, kind = "ok") => notify($("formMsg"), text, kind)
-
-let speechGuideObserver
 
 let mode = "login"
 
@@ -92,27 +90,13 @@ const enterPlatform = async (user) => {
   $("root").classList.remove("lg-hidden")
   $("site-footer").classList.remove("lg-hidden")
   const root = $("root")
-  speechGuideObserver?.disconnect()
-  speechGuideObserver = new MutationObserver(() => updateLessonUi(root))
-  speechGuideObserver.observe(root, { childList: true, subtree: true })
-  root.replaceChildren()
-  const loadingMessage = document.createElement("p")
-  loadingMessage.className =
-    "grid min-h-[50vh] place-items-center px-5 text-center text-slate-300"
-  loadingMessage.textContent = "بيتم تحميل الدروس، لحظة واحدة..."
-  root.appendChild(loadingMessage)
-  const bundle = document.createElement("script")
-  bundle.type = "module"
-  bundle.src = "./assets/index-lesson-voice-egyptian-v2.js"
-  bundle.addEventListener("load", () => updateLessonUi(root), { once: true })
-  bundle.onerror = () => {
+  mountLessonApp(root, (message) => {
     root.replaceChildren()
     root.classList.add("lg-hidden")
     $("site-footer").classList.add("lg-hidden")
     $("authShell").classList.remove("lg-hidden")
-    showMsg("تعذر تحميل الدروس. افحص اتصال الإنترنت ثم أعد تسجيل الدخول.", "err")
-  }
-  document.body.appendChild(bundle)
+    showMsg(message, "err")
+  })
 }
 
 const authError = (err) => {

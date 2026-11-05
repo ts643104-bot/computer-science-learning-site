@@ -1,4 +1,4 @@
-const addLink = (href, text, className = "") => {
+function addLink(href, text, className = "") {
   const link = document.createElement("a")
   link.href = href
   link.target = "_blank"
@@ -101,4 +101,57 @@ const addSpeechVoiceGuide = (root) => {
 export const updateLessonUi = (root) => {
   removeFreeLessonClaim(root)
   addSpeechVoiceGuide(root)
+}
+
+export const mountLessonApp = (root, onLoadFailure) => {
+  const loadingMessage = document.createElement("p")
+  loadingMessage.className =
+    "grid min-h-[50vh] place-items-center px-5 text-center text-slate-300"
+  loadingMessage.textContent = "بيتم تحميل الدروس، لحظة واحدة..."
+  root.replaceChildren(loadingMessage)
+
+  const bundle = document.createElement("script")
+  bundle.type = "module"
+  bundle.src = "./assets/index-lesson-voice-egyptian-v2.js"
+
+  let settled = false
+  let timeoutId
+  let renderCheckId
+
+  const finish = () => {
+    settled = true
+    clearTimeout(timeoutId)
+    clearTimeout(renderCheckId)
+  }
+
+  const fail = (message) => {
+    if (settled) return
+    finish()
+    observer.disconnect()
+    bundle.remove()
+    onLoadFailure(message)
+  }
+
+  const observer = new MutationObserver(() => {
+    updateLessonUi(root)
+    if (!loadingMessage.isConnected && root.childElementCount > 0) finish()
+  })
+  observer.observe(root, { childList: true, subtree: true })
+
+  bundle.addEventListener("load", () => {
+    renderCheckId = window.setTimeout(() => {
+      if (loadingMessage.isConnected) {
+        fail("ملفات الدروس اتحمّلت لكن الواجهة ما بدأتش. ارجع سجّل الدخول وحاول تاني.")
+      }
+    }, 3000)
+  }, { once: true })
+  bundle.addEventListener("error", () => {
+    fail("تعذر تحميل ملفات الدروس. افحص اتصال الإنترنت ثم سجّل الدخول وحاول تاني.")
+  }, { once: true })
+
+  timeoutId = window.setTimeout(() => {
+    fail("تحميل الدروس أخد وقت أطول من المعتاد. افحص اتصال الإنترنت وحاول تاني.")
+  }, 20000)
+
+  document.body.appendChild(bundle)
 }
