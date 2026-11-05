@@ -24,6 +24,8 @@ export const speechReaderLabels = {
   speaking: "جاري قراءة محتوى الدرس",
   paused: "القراءة متوقفة مؤقتًا",
   failed: "تعذرت القراءة",
+  egyptianVoiceUnavailable:
+    "الصوت المصري مش متوفر على جهازك. فعّل أو نزّل صوت عربي (مصر) من إعدادات الأصوات ثم جرّب تاني.",
 }
 
 export function getReadableLessonText(element) {
@@ -76,9 +78,14 @@ export function createSpeechReader({ onState, onError }) {
       speech.cancel()
       const activeRun = ++runId
       const voices = speech.getVoices()
+      const egyptianVoices = voices.filter((item) => item.lang.toLowerCase().startsWith("ar-eg"))
       const voice =
-        voices.find((item) => item.lang.toLowerCase().startsWith("ar-eg")) ||
-        voices.find((item) => item.lang.toLowerCase().startsWith("ar"))
+        egyptianVoices.find((item) => /natural|online|neural|hoda/i.test(item.name)) ||
+        egyptianVoices[0]
+      if (!voice) {
+        onError?.(speechReaderLabels.egyptianVoiceUnavailable)
+        return
+      }
 
       const speakChunk = (index) => {
         if (activeRun !== runId) return
@@ -88,9 +95,11 @@ export function createSpeechReader({ onState, onError }) {
         }
 
         const utterance = new window.SpeechSynthesisUtterance(chunks[index])
-        utterance.lang = voice?.lang || "ar-EG"
-        utterance.rate = 0.9
-        if (voice) utterance.voice = voice
+        utterance.lang = "ar-EG"
+        utterance.rate = 0.95
+        utterance.pitch = 1
+        utterance.volume = 1
+        utterance.voice = voice
         utterance.onend = () => speakChunk(index + 1)
         utterance.onerror = (event) => {
           if (activeRun !== runId || event.error === "canceled" || event.error === "interrupted") return

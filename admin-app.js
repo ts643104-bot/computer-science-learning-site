@@ -1,4 +1,4 @@
-import { auth, db, ADMIN_UID } from "./firebase-config.js"
+import { auth, db, ADMIN_UID, persistAuthSession } from "./firebase-config.js"
 import {
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
@@ -177,6 +177,7 @@ const adminLogin = async (email, password) => {
 
   let credential = null
   try {
+    await persistAuthSession()
     credential = await signInWithEmailAndPassword(auth, clean, password)
   } catch (err) {
     authError(err)
@@ -696,3 +697,21 @@ document.addEventListener("click", async (event) => {
 
 showLogin()
 applyLockState()
+
+const resumeAdminSession = async () => {
+  await auth.authStateReady()
+  const user = auth.currentUser
+  if (!user) return
+  if (user.uid !== ADMIN_UID) {
+    await signOut(auth)
+    return
+  }
+
+  showPanel()
+  showIdentity({ username: "admin", email: user.email || "" })
+  await loadDashboard()
+}
+
+resumeAdminSession().catch((err) => {
+  notify($("loginMsg"), err.message || "تعذر استعادة جلسة الأدمن المحفوظة.", "err")
+})

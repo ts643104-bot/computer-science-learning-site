@@ -1,4 +1,4 @@
-import { auth, db } from "./firebase-config.js"
+import { auth, db, persistAuthSession } from "./firebase-config.js"
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -97,7 +97,7 @@ const enterPlatform = async (user) => {
   root.appendChild(loadingMessage)
   const bundle = document.createElement("script")
   bundle.type = "module"
-  bundle.src = "./assets/index-lesson-visual-details.js"
+  bundle.src = "./assets/index-lesson-voice-egyptian.js"
   bundle.onerror = () => {
     root.replaceChildren()
     root.classList.add("lg-hidden")
@@ -135,6 +135,7 @@ const authError = (err) => {
 const handleLogin = async (email, password) => {
   let credential
   try {
+    await persistAuthSession()
     credential = await signInWithEmailAndPassword(auth, email, password)
   } catch (err) {
     showMsg(authError(err), "err")
@@ -176,6 +177,7 @@ const handleRegister = async (email, password) => {
 
   let credential
   try {
+    await persistAuthSession()
     credential = await createUserWithEmailAndPassword(auth, emailLower, password)
   } catch (err) {
     showMsg(authError(err), "err")
