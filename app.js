@@ -14,7 +14,7 @@ import {
   installFirebaseApiBridge,
   setLegacyAuthToken,
 } from "./firebase-api.js"
-import { addSpeechVoiceGuide } from "./speech-voice-guide.js"
+import { updateLessonUi } from "./lesson-ui.js"
 
 const $ = (id) => document.getElementById(id)
 installFirebaseApiBridge()
@@ -118,7 +118,7 @@ const enterPlatform = async (user) => {
   $("site-footer").classList.remove("lg-hidden")
   const root = $("root")
   speechGuideObserver?.disconnect()
-  speechGuideObserver = new MutationObserver(() => addSpeechVoiceGuide(root))
+  speechGuideObserver = new MutationObserver(() => updateLessonUi(root))
   speechGuideObserver.observe(root, { childList: true, subtree: true })
   root.replaceChildren()
   const loadingMessage = document.createElement("p")
@@ -129,7 +129,7 @@ const enterPlatform = async (user) => {
   const bundle = document.createElement("script")
   bundle.type = "module"
   bundle.src = "./assets/index-lesson-voice-egyptian-v2.js"
-  bundle.addEventListener("load", () => addSpeechVoiceGuide(root), { once: true })
+  bundle.addEventListener("load", () => updateLessonUi(root), { once: true })
   bundle.onerror = () => {
     root.replaceChildren()
     root.classList.add("lg-hidden")
