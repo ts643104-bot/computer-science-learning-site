@@ -2,15 +2,14 @@ import { auth, db } from "./firebase-config.js"
 import { signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"
 import {
   collection,
-  deleteDoc,
   doc,
   getDoc,
   getDocs,
   query,
   runTransaction,
-  setDoc,
   where,
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
+import { getQuizPoints } from "./progress-scoring.js"
 
 const TOKEN_KEY = "swn-token-v1"
 let installed = false
@@ -48,7 +47,6 @@ const getUserProfile = async (user) => {
     email: user.email,
     username: data.username || user.email?.split("@")[0] || "طالب",
     role: data.role || "student",
-    score: Number(data.score) || 0,
   }
 }
 
@@ -71,17 +69,25 @@ const isValidLessonId = (lessonId) =>
 
 const progressRef = (uid, lessonId) => doc(db, "progress", `${uid}_${lessonId}`)
 
+const getScoreFromProgress = (entries) =>
+  entries.reduce(
+    (score, entry) => score + getQuizPoints(entry.quizCorrect, entry.quizTotal),
+    0,
+  )
+
+const getUserScore = async (uid) => {
+  const snapshot = await getDocs(query(collection(db, "progress"), where("uid", "==", uid)))
+  return getScoreFromProgress(snapshot.docs.map((entry) => entry.data()))
+}
+
 const getProgress = async (user) => {
-  const [snapshot, profile] = await Promise.all([
-    getDocs(query(collection(db, "progress"), where("uid", "==", user.uid))),
-    getUserProfile(user),
-  ])
-  const progress = snapshot.docs
-    .map((entry) => entry.data())
+  const snapshot = await getDocs(query(collection(db, "progress"), where("uid", "==", user.uid)))
+  const entries = snapshot.docs.map((entry) => entry.data())
+  const progress = entries
     .filter((entry) => entry.completed === true && isValidLessonId(entry.lessonId))
     .map((entry) => entry.lessonId)
 
-  return { progress, score: profile.score, rank: null }
+  return { progress, score: getScoreFromProgress(entries), rank: null }
 }
 
 const completeLesson = async (user, body) => {
@@ -102,9 +108,9 @@ const completeLesson = async (user, body) => {
     }, { merge: true })
     return { already: false }
   })
-  const profile = await getUserProfile(user)
+  const score = await getUserScore(user.uid)
 
-  return { ...result, added: 0, score: profile.score, rank: null }
+  return { ...result, added: 0, score, rank: null }
 }
 
 const removeLesson = async (user, lessonId) => {
@@ -112,9 +118,18 @@ const removeLesson = async (user, lessonId) => {
     throw makeError("معرّف الدرس غير صالح.", "INVALID_LESSON_ID", 400)
   }
 
-  await deleteDoc(progressRef(user.uid, lessonId))
-  const profile = await getUserProfile(user)
-  return { score: profile.score, rank: null }
+  const reference = progressRef(user.uid, lessonId)
+  await runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(reference)
+    if (!snapshot.exists()) return
+    transaction.set(reference, {
+      uid: user.uid,
+      lessonId,
+      completed: false,
+    }, { merge: true })
+  })
+  const score = await getUserScore(user.uid)
+  return { score, rank: null }
 }
 
 const saveQuiz = async (user, body) => {
@@ -127,19 +142,32 @@ const saveQuiz = async (user, body) => {
     throw makeError("بيانات نتيجة الاختبار غير صالحة.", "INVALID_QUIZ_RESULT", 400)
   }
 
-  await setDoc(progressRef(user.uid, body.lessonId), {
-    uid: user.uid,
-    lessonId: body.lessonId,
-    quizCorrect: body.correct,
-    quizTotal: body.total,
-    quizSubmittedAt: new Date().toISOString(),
-  }, { merge: true })
+  const reference = progressRef(user.uid, body.lessonId)
+  const submittedPoints = getQuizPoints(body.correct, body.total)
+  const result = await runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(reference)
+    const existing = snapshot.exists() ? snapshot.data() : {}
+    const previousPoints = getQuizPoints(existing.quizCorrect, existing.quizTotal)
+    const added = Math.max(0, submittedPoints - previousPoints)
 
-  const profile = await getUserProfile(user)
+    if (added > 0) {
+      transaction.set(reference, {
+        uid: user.uid,
+        lessonId: body.lessonId,
+        quizCorrect: body.correct,
+        quizTotal: body.total,
+        quizSubmittedAt: new Date().toISOString(),
+      }, { merge: true })
+    }
+
+    return { added }
+  })
+
+  const score = await getUserScore(user.uid)
   return {
-    added: 0,
+    added: result.added,
     perfect: body.correct === body.total,
-    score: profile.score,
+    score,
     rank: null,
   }
 }
@@ -164,7 +192,8 @@ const handleApiRequest = async (url, method, init) => {
     const user = await getAuthenticatedUser()
 
     if (path === "/auth/me" && method === "GET") {
-      return jsonResponse({ user: await getUserProfile(user) })
+      const profile = await getUserProfile(user)
+      return jsonResponse({ user: { ...profile, score: await getUserScore(user.uid) } })
     }
 
     if (path === "/progress" && method === "GET") {

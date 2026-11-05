@@ -12,6 +12,7 @@ import {
   getDocs,
   deleteDoc,
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
+import { getQuizPoints } from "./progress-scoring.js"
 
 const $ = (id) => document.getElementById(id)
 
@@ -311,7 +312,20 @@ const deleteWhitelist = async (email) => {
 }
 
 const getUsers = async () => {
-  const usersSnap = await getDocs(collection(db, "users"))
+  const [usersSnap, progressSnap] = await Promise.all([
+    getDocs(collection(db, "users")),
+    getDocs(collection(db, "progress")),
+  ])
+  const scores = new Map()
+  progressSnap.docs.forEach((entry) => {
+    const progress = entry.data()
+    if (!progress.uid) return
+    scores.set(
+      progress.uid,
+      (scores.get(progress.uid) || 0) + getQuizPoints(progress.quizCorrect, progress.quizTotal),
+    )
+  })
+
   const items = usersSnap.docs.map((entry) => {
     const user = entry.data()
     return {
@@ -319,7 +333,7 @@ const getUsers = async () => {
       username: user.username,
       email: user.email,
       role: user.role || "student",
-      score: Number(user.score) || 0,
+      score: scores.get(entry.id) || 0,
       rank: "—",
     }
   })
