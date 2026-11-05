@@ -50,3 +50,11 @@ export function getLessonIllustration(lessonId) {
 }
 
 export const lessonIllustrationIds = Object.keys(illustrations);
+
+export const lessonIllustrationLabels = {
+  accessibleTitle: "رسم توضيحي: ",
+  hint: "تتحرك النقطة بين المراحل تلقائيًا. استخدم الزر لإيقاف الحركة أو تشغيلها.",
+  reducedMotion: "الحركة متوقفة حسب إعداد جهازك",
+  pauseMotion: "إيقاف الحركة",
+  resumeMotion: "تحريك الرسم",
+};
