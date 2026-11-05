@@ -43,8 +43,8 @@
 | `assets/lessons-content.js` | شروحات الدروس وأهدافها واختباراتها |
 | `assets/lesson-illustrations-explanations.js` | الرسوم التوضيحية وشروحات مبسطة لكل درس من الدروس الأربعين |
 | `assets/lesson-visuals-v2.js` | صور المكونات ورسومها مع شرح ومميزات وعيوب وروابط المصدر والترخيص |
-| `assets/speech-reader-egyptian.js` | قراءة محتوى الدرس بالصوت المصري المتوفر على جهاز المستخدم |
-| `assets/index-lesson-voice-egyptian.js` | واجهة الدروس والرسوم والصور والقراءة بالصوت المصري |
+| `assets/speech-reader-egyptian-v2.js` | قراءة محتوى الدرس بالصوت المصري المتوفر على جهاز المستخدم |
+| `assets/index-lesson-voice-egyptian-v2.js` | واجهة الدروس والرسوم والصور والقراءة بالصوت المصري |
 | `assets/network-lesson.js` | محتوى درس أنواع الشبكات |
 | `login-app.js` | تسجيل الدخول / إنشاء حساب الطلاب |
 | `admin-app.js` | تسجيل دخول الأدمن ولوحة التحكم |

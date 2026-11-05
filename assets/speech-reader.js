@@ -56,6 +56,20 @@ export function createSpeechReader({ onState, onError }) {
   let runId = 0
 
   const setState = (state) => onState?.(state)
+  const loadVoices = () => {
+    const voices = speech.getVoices()
+    if (voices.length) return Promise.resolve(voices)
+
+    return new Promise((resolve) => {
+      const finish = () => {
+        window.clearTimeout(timeoutId)
+        speech.removeEventListener("voiceschanged", finish)
+        resolve(speech.getVoices())
+      }
+      const timeoutId = window.setTimeout(finish, 2000)
+      speech.addEventListener("voiceschanged", finish, { once: true })
+    })
+  }
   const stop = () => {
     runId += 1
     speech?.cancel()
@@ -63,7 +77,7 @@ export function createSpeechReader({ onState, onError }) {
   }
 
   return {
-    start(text) {
+    async start(text) {
       if (!speech || typeof window.SpeechSynthesisUtterance !== "function") {
         onError?.("المتصفح لا يدعم القراءة الصوتية. جرّب متصفحًا أحدث.")
         return
@@ -77,12 +91,15 @@ export function createSpeechReader({ onState, onError }) {
 
       speech.cancel()
       const activeRun = ++runId
-      const voices = speech.getVoices()
+      const voices = await loadVoices()
+      if (activeRun !== runId) return
+
       const egyptianVoices = voices.filter((item) => item.lang.toLowerCase().startsWith("ar-eg"))
       const voice =
         egyptianVoices.find((item) => /natural|online|neural|hoda/i.test(item.name)) ||
         egyptianVoices[0]
       if (!voice) {
+        setState("idle")
         onError?.(speechReaderLabels.egyptianVoiceUnavailable)
         return
       }
@@ -107,16 +124,16 @@ export function createSpeechReader({ onState, onError }) {
           setState("idle")
           onError?.("حصلت مشكلة أثناء تشغيل الصوت. جرّب بدء القراءة مرة تانية.")
         }
-            try {
-              speech.speak(utterance)
-            } catch {
-              if (activeRun !== runId) return
-              runId += 1
-              setState("idle")
-              onError?.("تعذر تشغيل الصوت من المتصفح. تأكد من إتاحة الصوت ثم أعد المحاولة.")
-              return
-            }
-            setState("speaking")
+        try {
+          speech.speak(utterance)
+        } catch {
+          if (activeRun !== runId) return
+          runId += 1
+          setState("idle")
+          onError?.("تعذر تشغيل الصوت من المتصفح. تأكد من إتاحة الصوت ثم أعد المحاولة.")
+          return
+        }
+        setState("speaking")
       }
 
       setState("speaking")
