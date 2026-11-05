@@ -2,7 +2,7 @@ const images = {
   motherboard: {
     title: "اللوحة الأم",
     alt: "لوحة أم للحاسوب تظهر عليها أماكن تركيب المكونات",
-    src: "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5a/Computer_motherboard_11.jpg/960px-Computer_motherboard_11.jpg",
+    src: "./images/motherboard.jpg",
     page: "https://commons.wikimedia.org/wiki/File:Computer_motherboard_11.jpg",
     artist: "Kurt Kaiser",
     license: "CC0",
@@ -11,7 +11,7 @@ const images = {
   cpu: {
     title: "المعالج CPU",
     alt: "معالج Intel Core i7 منفصل قبل تركيبه على اللوحة الأم",
-    src: "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/21/2023_Intel_Core_i7_12700KF_%283%29.jpg/960px-2023_Intel_Core_i7_12700KF_%283%29.jpg",
+    src: "./images/cpu.jpg",
     page: "https://commons.wikimedia.org/wiki/File:2023_Intel_Core_i7_12700KF_(3).jpg",
     artist: "Jacek Halicki",
     license: "CC BY-SA 4.0",
@@ -20,7 +20,7 @@ const images = {
   memory: {
     title: "ذاكرة RAM",
     alt: "شريحة ذاكرة DDR4 RAM للحاسوب",
-    src: "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/85/16_GiB-DDR4-RAM-Riegel_RAM019FIX_Small_Crop_90_PCNT.png/960px-16_GiB-DDR4-RAM-Riegel_RAM019FIX_Small_Crop_90_PCNT.png",
+    src: "./images/memory.png",
     page: "https://commons.wikimedia.org/wiki/File:16_GiB-DDR4-RAM-Riegel_RAM019FIX_Small_Crop_90_PCNT.png",
     artist: "PantheraLeo1359531",
     license: "CC BY 4.0",
@@ -29,7 +29,7 @@ const images = {
   graphics: {
     title: "بطاقة الرسوميات GPU",
     alt: "بطاقة رسوميات منفصلة للحاسوب",
-    src: "https://upload.wikimedia.org/wikipedia/commons/9/98/ATI_Radeon_HD_5850_Graphics_Card-oblique_view.jpg",
+    src: "./images/graphics.jpg",
     page: "https://commons.wikimedia.org/wiki/File:ATI_Radeon_HD_5850_Graphics_Card-oblique_view.jpg",
     artist: "Advanced Micro Devices (AMD)",
     license: "Attribution",
@@ -38,7 +38,7 @@ const images = {
   storage: {
     title: "وحدة التخزين SSD",
     alt: "وحدة تخزين SSD داخلية للحاسوب",
-    src: "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7a/2017_Dysk_SSD_Plextor_M8Pe%28Y%29_256GB.jpg/960px-2017_Dysk_SSD_Plextor_M8Pe%28Y%29_256GB.jpg",
+    src: "./images/storage.jpg",
     page: "https://commons.wikimedia.org/wiki/File:2017_Dysk_SSD_Plextor_M8Pe(Y)_256GB.jpg",
     artist: "Jacek Halicki",
     license: "CC BY-SA 4.0",
@@ -47,7 +47,7 @@ const images = {
   input: {
     title: "الفأرة ولوحة المفاتيح",
     alt: "حاسوب مكتبي مع فأرة ولوحة مفاتيح",
-    src: "https://upload.wikimedia.org/wikipedia/commons/0/0c/Computer_with_mouse_and_keyboard.png",
+    src: "./images/input.png",
     page: "https://commons.wikimedia.org/wiki/File:Computer_with_mouse_and_keyboard.png",
     artist: "Hacker19374",
     license: "CC BY-SA 4.0",
@@ -56,7 +56,7 @@ const images = {
   router: {
     title: "الموجّه Router",
     alt: "جهاز موجّه منزلي للاتصال بالشبكة",
-    src: "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5a/Digicel_Router_Trinidad.jpg/960px-Digicel_Router_Trinidad.jpg",
+    src: "./images/router.jpg",
     page: "https://commons.wikimedia.org/wiki/File:Digicel_Router_Trinidad.jpg",
     artist: "999real",
     license: "CC0",
@@ -65,7 +65,7 @@ const images = {
   ethernet: {
     title: "كابل Ethernet وموصل RJ45",
     alt: "كابل شبكة Ethernet بموصل RJ45",
-    src: "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/78/Patch_cable_with_RJ45_connector.jpg/960px-Patch_cable_with_RJ45_connector.jpg",
+    src: "./images/ethernet.jpg",
     page: "https://commons.wikimedia.org/wiki/File:Patch_cable_with_RJ45_connector.jpg",
     artist: "www.heimnetzwerke.net",
     license: "CC BY 4.0",
@@ -74,7 +74,7 @@ const images = {
   fiber: {
     title: "كابل الألياف الضوئية",
     alt: "أعمال تمديد كابل ألياف ضوئية لشبكة اتصالات",
-    src: "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/50/NBN_Co_fibre_optic_cable_being_laid_in_Tarcutta_St_in_Wagga.jpg/960px-NBN_Co_fibre_optic_cable_being_laid_in_Tarcutta_St_in_Wagga.jpg",
+    src: "./images/fiber.jpg",
     page: "https://commons.wikimedia.org/wiki/File:NBN_Co_fibre_optic_cable_being_laid_in_Tarcutta_St_in_Wagga.jpg",
     artist: "Bidgee",
     license: "CC BY-SA 3.0 AU",
@@ -84,27 +84,49 @@ const images = {
 
 const lessonImageIds = {
   "cs-01": ["input", "motherboard", "cpu"],
+  "cs-02": ["memory", "storage"],
   "cs-04": ["motherboard", "cpu", "memory", "graphics", "storage", "input"],
   "cs-05": ["motherboard", "cpu", "memory"],
+  "cs-06": ["memory", "storage"],
   "cs-08": ["storage"],
+  "cs-10": ["input"],
+  "cs-11": ["cpu", "memory"],
+  "cs-12": ["memory", "storage"],
+  "cs-13": ["storage"],
+  "cs-14": ["router", "ethernet"],
+  "cs-15": ["router"],
+  "cs-16": ["router"],
+  "cs-17": ["motherboard", "cpu"],
+  "cs-18": ["input"],
+  "cs-19": ["cpu", "graphics"],
+  "cs-20": ["graphics"],
   "net-01": ["router", "ethernet", "fiber"],
   "net-02": ["router"],
   "net-03": ["router"],
   "net-04": ["ethernet", "fiber"],
   "net-05": ["ethernet"],
   "net-06": ["ethernet", "fiber"],
+  "net-07": ["router", "ethernet"],
   "net-08": ["router", "ethernet"],
+  "net-09": ["router"],
   "net-10": ["router"],
   "net-11": ["router"],
+  "net-12": ["router", "ethernet"],
   "net-13": ["router"],
   "net-14": ["router"],
+  "net-15": ["router", "ethernet"],
+  "net-16": ["router"],
+  "net-17": ["router"],
   "net-18": ["router"],
   "net-19": ["router"],
   "net-20": ["router", "fiber"],
 }
 
 export function getLessonImages(lessonId) {
-  return (lessonImageIds[lessonId] || []).map((imageId) => images[imageId])
+  return (lessonImageIds[lessonId] || []).map((imageId) => {
+    const image = images[imageId]
+    return { ...image, src: new URL(image.src, import.meta.url).href }
+  })
 }
 
 export const lessonImageLabels = {
