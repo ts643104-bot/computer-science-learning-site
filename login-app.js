@@ -10,8 +10,14 @@ import {
   getDoc,
   setDoc,
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
+import {
+  clearLegacyAuthToken,
+  installFirebaseApiBridge,
+  setLegacyAuthToken,
+} from "./firebase-api.js"
 
 const $ = (id) => document.getElementById(id)
+installFirebaseApiBridge()
 
 const notify = (el, text, kind = "ok") => {
   if (!text) {
@@ -77,7 +83,7 @@ const setStudentRole = async (uid, email) => {
 const enterPlatform = async (user) => {
   const email = normalizeEmail(user.email)
   await setStudentRole(user.uid, email)
-  await signOut(auth)
+  await setLegacyAuthToken(user)
   sessionStorage.setItem("shabaka-student", email)
   $("authShell").classList.add("lg-hidden")
   $("root").classList.remove("lg-hidden")
@@ -121,6 +127,7 @@ const handleLogin = async (email, password) => {
       requestedAt: new Date().toISOString(),
     }, { merge: true })
     await signOut(auth)
+    clearLegacyAuthToken()
     showMsg("طلبك قيد المراجعة والموافقة من الأدمن.", "err")
     return
   }
@@ -158,6 +165,7 @@ const handleRegister = async (email, password) => {
   })
 
   await signOut(auth)
+  clearLegacyAuthToken()
   setMode("login")
   showMsg("تم إرسال طلبك. حسابك يحتاج موافقة الأدمن قبل الدخول.", "ok")
 }
@@ -177,6 +185,7 @@ $("authForm").addEventListener("submit", async (event) => {
   } catch (err) {
     try {
       if (auth.currentUser) await signOut(auth)
+      clearLegacyAuthToken()
     } catch (signOutError) {
       showMsg(`تعذر إنهاء جلسة الدخول: ${signOutError.message || "حاول مرة أخرى."}`, "err")
       return
@@ -205,9 +214,17 @@ const init = async () => {
         await enterPlatform(user)
       } else {
         await signOut(auth)
+        clearLegacyAuthToken()
         showMsg("حسابك لم يتم الموافقة عليه بعد — بانتظار مراجعة الأدمن.", "err")
       }
     } catch (err) {
+      try {
+        if (auth.currentUser) await signOut(auth)
+        clearLegacyAuthToken()
+      } catch (signOutError) {
+        showMsg(`تعذر إنهاء جلسة الدخول: ${signOutError.message || "حاول مرة أخرى."}`, "err")
+        return
+      }
       showMsg(authError(err), "err")
     }
   }

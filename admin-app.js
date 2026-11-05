@@ -246,7 +246,7 @@ const adminOverview = async () => {
     admins: users.length - students.length,
     whitelisted: active.length,
     pending: pendingSnap.size,
-    completions: progressSnap.size,
+    completions: progressSnap.docs.filter((entry) => entry.data().completed === true).length,
   }
 }
 

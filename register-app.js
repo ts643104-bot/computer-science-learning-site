@@ -5,6 +5,7 @@ import {
   setDoc,
   getDoc,
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
+import { clearLegacyAuthToken } from "./firebase-api.js"
 
 const $ = (id) => document.getElementById(id)
 
@@ -90,6 +91,7 @@ $("registerForm").addEventListener("submit", async (event) => {
     showMsg("تم إرسال طلبك بنجاح! حسابك قيد المراجعة والموافقة من قِبل الأدمن.", "ok")
     $("registerForm").reset()
     await signOut(auth)
+    clearLegacyAuthToken()
     setTimeout(() => {
       window.location.href = "./login.html"
     }, 2000)

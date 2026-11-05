@@ -9,8 +9,14 @@ import {
   getDoc,
   setDoc,
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
+import {
+  clearLegacyAuthToken,
+  installFirebaseApiBridge,
+  setLegacyAuthToken,
+} from "./firebase-api.js"
 
 const $ = (id) => document.getElementById(id)
+installFirebaseApiBridge()
 
 const notify = (el, text, kind = "ok") => {
   if (!text) {
@@ -95,7 +101,7 @@ const enterPlatform = async (user) => {
       createdAt: new Date().toISOString(),
     })
   }
-  await signOut(auth)
+  await setLegacyAuthToken(user)
   sessionStorage.setItem("shabaka-student", email)
   $("authShell").classList.add("lg-hidden")
   $("root").classList.remove("lg-hidden")
@@ -128,10 +134,12 @@ const handleRegister = async (email, password) => {
   } catch (err) {
     showMsg(authError(err), "err")
     await signOut(auth)
+    clearLegacyAuthToken()
     return
   }
 
   await signOut(auth)
+  clearLegacyAuthToken()
   $("authForm").reset()
   setMode("login")
   showMsg("تم إرسال طلبك للأدمن، بانتظار الموافقة للدخول", "ok")
@@ -150,6 +158,7 @@ const handleLogin = async (email, password) => {
 
   if (!(await isWhitelisted(emailLower))) {
     await signOut(auth)
+    clearLegacyAuthToken()
     showMsg("حسابك لم يتم الموافقة عليه بعد — بانتظار مراجعة الأدمن.", "err")
     return
   }
@@ -180,6 +189,7 @@ $("authForm").addEventListener("submit", async (event) => {
   } catch (err) {
     try {
       if (auth.currentUser) await signOut(auth)
+      clearLegacyAuthToken()
     } catch (signOutError) {
       showMsg(`تعذر إنهاء جلسة الدخول: ${signOutError.message || "حاول مرة أخرى."}`, "err")
       return
