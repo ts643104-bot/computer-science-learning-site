@@ -1,6 +1,7 @@
 import { auth, db, ADMIN_UID } from "./firebase-config.js"
 import {
   signInWithEmailAndPassword,
+  sendPasswordResetEmail,
   signOut,
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"
 import {
@@ -331,6 +332,33 @@ const deleteUser = async (id) => {
   return { ok: true }
 }
 
+const sendStudentPasswordReset = async (email) => {
+  if (!auth.currentUser || auth.currentUser.uid !== ADMIN_UID) {
+    fail("يجب تسجيل الدخول بحساب الأدمن المعتمد لإرسال رابط إعادة التعيين.", "FORBIDDEN")
+  }
+  const clean = normalizeEmail(email)
+  if (!clean) fail("البريد الإلكتروني للطالب غير صحيح.", "BAD_EMAIL")
+
+  try {
+    await sendPasswordResetEmail(auth, clean)
+    return { ok: true }
+  } catch (err) {
+    if (err.code === "auth/user-not-found") {
+      fail("لا يوجد حساب مسجل بهذا البريد في Firebase Authentication.", err.code)
+    }
+    if (err.code === "auth/invalid-email") {
+      fail("البريد الإلكتروني للطالب غير صحيح.", err.code)
+    }
+    if (err.code === "auth/unauthorized-domain") {
+      fail("أضف نطاق الموقع إلى Firebase Authentication → Settings → Authorized domains.", err.code)
+    }
+    if (err.code === "auth/too-many-requests") {
+      fail("تم طلب رسائل كثيرة مؤخرًا. انتظر قليلًا ثم حاول مرة أخرى.", err.code)
+    }
+    authError(err)
+  }
+}
+
 const getPendingRequests = async () => {
   const snap = await getDocs(collection(db, "pending_requests"))
   return {
@@ -439,6 +467,7 @@ const loadDashboard = async () => {
               `<td class="ad-mono" style="color:#86efac">${user.score}</td>` +
               `<td><span class="ad-pill ${user.role === "admin" ? "g" : "s"}">${escapeHtml(user.role)}</span></td>` +
               '<td><div class="ad-actions">' +
+              `${user.role === "student" && user.email ? `<button class="ad-mini" data-user-reset="${escapeHtml(user.email)}">إرسال رابط تعيين كلمة المرور</button>` : ""}` +
               `<button class="ad-mini d" data-user-delete="${user.id}">حذف</button>` +
               "</div></td></tr>"
           )
@@ -645,6 +674,22 @@ document.addEventListener("click", async (event) => {
       loadDashboard()
     } catch (err) {
       notify($("panelMsg"), err.message, "err")
+    }
+    return
+  }
+
+  const resetEmail = target.dataset.userReset
+  if (resetEmail) {
+    if (!confirm(`إرسال رابط آمن لتغيير كلمة المرور إلى ${resetEmail}؟ لن تظهر كلمة المرور داخل لوحة الأدمن.`)) return
+
+    target.disabled = true
+    try {
+      await sendStudentPasswordReset(resetEmail)
+      notify($("panelMsg"), `إذا كان الحساب موجودًا، ستصل رسالة إعادة تعيين كلمة المرور إلى ${resetEmail}.`, "ok")
+    } catch (err) {
+      notify($("panelMsg"), err.message || "تعذر إرسال رابط إعادة تعيين كلمة المرور.", "err")
+    } finally {
+      target.disabled = false
     }
   }
 })
