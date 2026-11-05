@@ -183,13 +183,6 @@ const adminLogin = async (email, password) => {
     username: "admin",
     role: "admin",
     score: 0,
-    lastLogin: new Date().toISOString(),
-  }
-  try {
-    await setDoc(userRef(credential.user.uid), adminUser, { merge: true })
-  } catch (err) {
-    await signOut(auth)
-    throw err
   }
   return { ok: true, user: publicUser(adminUser) }
 }
@@ -443,7 +436,10 @@ const loadDashboard = async () => {
           .join("")
       : '<tr><td colspan="7" class="ad-empty">لا يوجد مستخدمين لسه</td></tr>'
   } catch (err) {
-    notify($("panelMsg"), err.message, "err")
+    const message = err.code === "permission-denied"
+      ? "تم تسجيل الدخول، لكن صلاحيات Firestore غير محدثة. انشر محتوى firestore.rules من Firebase Console ثم أعد تحميل الصفحة."
+      : err.message || "تعذر تحميل بيانات لوحة التحكم."
+    notify($("panelMsg"), message, "err")
   }
 }
 
