@@ -115,7 +115,7 @@ const enterPlatform = async (user) => {
   $("site-footer").classList.remove("lg-hidden")
   const bundle = document.createElement("script")
   bundle.type = "module"
-  bundle.src = "./assets/index-1YtfEv0H.js"
+  bundle.src = "./assets/index-kV-qI3QI.js"
   document.body.appendChild(bundle)
 }
 
